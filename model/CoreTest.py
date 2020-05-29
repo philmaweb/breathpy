@@ -228,7 +228,7 @@ def test_resume_analysis(plot_params, file_params, preprocessing_steps, evaluati
     outfile_names = [file_params['out_dir'] + fn[:-4] + "_out.csv" for fn in in_file_names]
 
     # test for visualnow layer import
-    # visual_now_file_path = "/home/philipp/dev/BreathAnalysis/data/train_full_candy/train_full_candy_layer.xls"
+    # visual_now_file_path = "/home/philipp/dev/breathpy/data/train_full_candy/train_full_candy_layer.xls"
     peax_binary_path = "{0}bin/peax1.0-LinuxX64/peax".format(file_params['dir_level'])
 
     label_dict_path = MccImsAnalysis.guess_class_label_extension(file_params['folder_path'])

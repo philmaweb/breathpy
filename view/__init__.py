@@ -8,7 +8,7 @@ except ModuleNotFoundError:
     for ele in sys.path:
         if ele.endswith(current_working_dir.split("/")[-1]):
             project_prefix = ele
-    dir_to_add = project_prefix + "/breath/external/BreathAnalysis"
+    dir_to_add = project_prefix + "/breath/external/breathpy"
     if dir_to_add not in sys.path:
         sys.path.append(dir_to_add)
         print("Adding {0} to pythonpath".format(dir_to_add))

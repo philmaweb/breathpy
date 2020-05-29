@@ -98,7 +98,7 @@ def handle_peak_alignment_result_type(peak_alignment_func):
 
 def get_breath_analysis_dir():
     """
-    Returns absolute path of main project directory - one dir above BreathAnalysis/model
+    Returns absolute path of main project directory - one dir above breathpy/model
     :return:
     """
     this_file_absolute_path = os.path.realpath(__file__)
@@ -106,7 +106,7 @@ def get_breath_analysis_dir():
 
 def construct_default_parameters(file_prefix, folder_name, make_plots=False, execution_dir_level='project_dir'):
     """
-    Construct default plot and file parameters. Either execute from project home directory or BreathAnalysis/model.
+    Construct default plot and file parameters. Either execute from project home directory or breathpy/model.
         Use `execution_dir_level`='one' if executing from project home - otherwise leave as is.
     :param file_prefix: what to prefix created plots and exports - eg "train_full_candy"
     :param folder_name: where data is located - eg "train_full_candy"

@@ -78,7 +78,7 @@ def compare_peax_results(fn1, fn2, df1=None, df2=None):
     print(f"df1 == df2, {all(comp_lis)}")
 
     # # compare if import function is problem
-    # from breath.external.BreathAnalysis.tools.tools import compare_peax_results
+    # from breath.external.breathpy.tools.tools import compare_peax_results
     # from celery.contrib import rdb;
     # df2 = mcc_ims_analysis.peak_detection_results['PEAX'][0].peak_df
     # df2.index = df2['measurement_name']
@@ -89,8 +89,8 @@ def compare_peax_results(fn1, fn2, df1=None, df2=None):
 
 if __name__ == "__main__":
 
-    peax_binary = "/home/philipp/dev/BreathAnalysis/bin/peax1.0-LinuxX64/peax"
-    raw_dir = "/home/philipp/dev/BreathAnalysis/bin/peax1.0-LinuxX64/"
+    peax_binary = "/home/philipp/dev/breathpy/bin/peax1.0-LinuxX64/peax"
+    raw_dir = "/home/philipp/dev/breathpy/bin/peax1.0-LinuxX64/"
     raw_files = list_all_ims_files(raw_dir)
 
     # # find out what parameters used for best prediction results

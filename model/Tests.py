@@ -40,12 +40,12 @@ from sklearn.svm import SVC
 import matplotlib.pyplot as plt
 
 def test_class_label_parsing():
-    labels1 = MccImsAnalysis.parse_class_labels("/home/philipp/dev/BreathAnalysis/data/merged_candy/class_labels.txt")
-    labels2 = MccImsAnalysis.parse_class_labels("/home/philipp/dev/BreathAnalysis/data/merged_candy/class_labels.tsv")
-    labels3 = MccImsAnalysis.parse_class_labels("/home/philipp/dev/BreathAnalysis/data/merged_candy/class_labels.csv")
+    labels1 = MccImsAnalysis.parse_class_labels("/home/philipp/dev/breathpy/data/merged_candy/class_labels.txt")
+    labels2 = MccImsAnalysis.parse_class_labels("/home/philipp/dev/breathpy/data/merged_candy/class_labels.tsv")
+    labels3 = MccImsAnalysis.parse_class_labels("/home/philipp/dev/breathpy/data/merged_candy/class_labels.csv")
 
-    labels4 = MccImsAnalysis.parse_class_labels("/home/philipp/dev/BreathAnalysis/data/merged_candy/class_labels.zip/class_labels.csv")
-    labels5 = MccImsAnalysis.parse_class_labels("/home/philipp/dev/BreathAnalysis/data/merged_candy/class_labels.zip/class_labels.tsv")
+    labels4 = MccImsAnalysis.parse_class_labels("/home/philipp/dev/breathpy/data/merged_candy/class_labels.zip/class_labels.csv")
+    labels5 = MccImsAnalysis.parse_class_labels("/home/philipp/dev/breathpy/data/merged_candy/class_labels.zip/class_labels.tsv")
     labels_solution_str = {'BD18_1408280826_ims.csv': 'menthol', 'BD18_1408280834_ims.csv': 'citrus', 'BD18_1408280838_ims.csv': 'citrus', 'BD18_1408280841_ims.csv': 'menthol', 'BD18_1408280844_ims.csv': 'menthol', 'BD18_1408280851_ims.csv': 'citrus', 'BD18_1511121654_ims.csv': 'menthol', 'BD18_1511121658_ims.csv': 'citrus', 'BD18_1511121702_ims.csv': 'citrus', 'BD18_1511121706_ims.csv': 'menthol', 'BD18_1511121709_ims.csv': 'citrus', 'BD18_1511121712_ims.csv': 'citrus', 'BD18_1511121716_ims.csv': 'citrus', 'BD18_1511121719_ims.csv': 'menthol', 'BD18_1511121723_ims.csv': 'menthol', 'BD18_1511121727_ims.csv': 'citrus', 'BD18_1511121730_ims.csv': 'menthol', 'BD18_1511121734_ims.csv': 'menthol', 'BD18_1511121738_ims.csv': 'menthol', 'BD18_1511121742_ims.csv': 'citrus'}
     assert labels1 == labels_solution_str
     assert labels2 == labels_solution_str
@@ -123,17 +123,17 @@ def test_percentage_reduction():
 
 
 def load_sample_normalized_measurement():
-    m = MccImsMeasurement(raw_filename="/home/philipp/PycharmProjects/django_mockup/mysite/breath/external/BreathAnalysis/data/merged_candy/BD18_1408280826_ims.csv")
+    m = MccImsMeasurement(raw_filename="/home/philipp/PycharmProjects/django_mockup/mysite/breath/external/breathpy/data/merged_candy/BD18_1408280826_ims.csv")
     m.normalize_by_intensity()
     return m
 
 def load_sample_raw_measurement():
-    return MccImsMeasurement(raw_filename="/home/philipp/PycharmProjects/django_mockup/mysite/breath/external/BreathAnalysis/data/merged_candy/BD18_1408280826_ims.csv")
+    return MccImsMeasurement(raw_filename="/home/philipp/PycharmProjects/django_mockup/mysite/breath/external/breathpy/data/merged_candy/BD18_1408280826_ims.csv")
 
 def run_peax():
     import subprocess
     m = load_sample_raw_measurement()
-    peax_binary = "/home/philipp/PycharmProjects/django_mockup/mysite/breath/external/BreathAnalysis/bin/peax1.0-LinuxX64/peax"
+    peax_binary = "/home/philipp/PycharmProjects/django_mockup/mysite/breath/external/breathpy/bin/peax1.0-LinuxX64/peax"
     raw_path = m.raw_filename
     result_path = m.raw_filename + "peax_out"
     subprocess.check_call([peax_binary, raw_path, result_path])

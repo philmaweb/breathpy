@@ -815,7 +815,7 @@ def prepare_peak_detection_results_zip(file_params, preprocessing_steps):
     # make sure all filename match in raw_dir / data dir
     if "candy" in file_params['folder_name']:
         # copy master dict to raw dir
-        master_candy_file = "/home/philipp/dev/BreathAnalysis/data/full_candy/class_labels.csv"
+        master_candy_file = "/home/philipp/dev/breathpy/data/full_candy/class_labels.csv"
         copyfile(master_candy_file, Path(data_dir).joinpath("full_candy_class_labels.csv"))
 
     filtered_class_label_dict_fn = prepare_adjust_class_label_dict_to_measurements(data_dir)
@@ -1001,7 +1001,7 @@ def make_example_paper_plots(file_params, plot_params, preprocessing_steps, eval
     # make probe clustering plot to show grid
     # sample measurements are corrupted - or at least not normalized
     from tools.tools import plot_probe_clustering_grid
-    grid_measurement = MccImsMeasurement(raw_filename="/home/philipp/dev/BreathAnalysis/data/small_candy_anon/BD18_1408280838_ims.csv")
+    grid_measurement = MccImsMeasurement(raw_filename="/home/philipp/dev/breathpy/data/small_candy_anon/BD18_1408280838_ims.csv")
     grid_measurement.normalize_by_intensity()
     # grid_measurement.denoise_crop_inverse_reduced_mobility()
     plot_probe_clustering_grid(grid_measurement, plot_parameters=plot_params)

@@ -44,7 +44,7 @@ def run_algae_platform():
     Run algae example from start to finish using BreathCore implementations and classes
     :return:
     """
-    data_dir = "/home/philipp/dev/BreathAnalysis/data"
+    data_dir = "/home/philipp/dev/breathpy/data"
     algae_dir = f"{data_dir}/algae/"
     algae_files, class_label_dict = prepare_algae_sample_filenames(algae_dir, ['dark', 'replete', 'light'])
     # gcms_a = GCMSAnalysis(measurements=algae_files, preprocessing_steps=[GCMSPeakDetectionMethod.ISOTOPEWAVELET], dataset_name="algae_limited", dir_level=".", preprocessing_parameters={GCMSPeakDetectionMethod.ISOTOPEWAVELET: {"hr_data": True}}, performance_measure_parameters={})
