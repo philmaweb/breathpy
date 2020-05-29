@@ -65,9 +65,9 @@ run_gcms_platform_multicore(sample_dir=train_dir, preprocessing_params=preproces
 See `model/GCMSTest.py` for reference. Example data coming soon.
 
 ### License
-BreathPy is licensed under GPLv3, but contains binaries for PEAX, which is a free software for academic use only.
+`BreathPy` is licensed under GPLv3, but contains binaries for PEAX, which is a free software for academic use only.
 See
 > [A modular computational framework for automated peak extraction from ion mobility spectra, 2014, D’Addario *et. al*](https://doi.org/10.1186/1471-2105-15-25)
 
 ## Contact
-If you run into difficulties using BreathPy, please open an issue at our [GitHub](https://github.com/philmaweb/BreathPy) repository. Alternatively you can write an email to [Philipp Weber](mailto:pweber@imada.sdu.dk?subject=[BreathPy-PyPI]%20BreathPy).
+If you run into difficulties using `BreathPy`, please open an issue at our [GitHub](https://github.com/philmaweb/BreathPy) repository. Alternatively you can write an email to [Philipp Weber](mailto:pweber@imada.sdu.dk?subject=[BreathPy]%20BreathPy).
