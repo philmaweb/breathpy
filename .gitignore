@@ -1,0 +1,15 @@
+*.pyc
+*.DS_Store
+.idea/*
+tree.dot
+.ipynb_checkpoints/*
+dist/*
+.pythoscope
+.idea
+*.pyc
+doc/build/*
+build/*
+dist/*
+*.pyc
+Makefile
+source/*
