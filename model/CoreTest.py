@@ -375,11 +375,11 @@ def run_default(set_name, make_plots=False, limit_to_pdm=[]):
     return file_parameters, preprocessing_steps
 
 if __name__ == '__main__':
-    file_prefix = 'train_mouthwash'; folder_name = "train_mouthwash"
+    # file_prefix = 'train_mouthwash'; folder_name = "train_mouthwash"
     # file_prefix = 'train_COPD'; folder_name = "train_COPD"
     # file_prefix = 'train_full_candy'; folder_name = "train_full_candy"
     # file_prefix = 'test_full_candy'; folder_name = "test_full_candy"
-    # file_prefix = 'small_candy_anon'; folder_name = "small_candy_anon"
+    file_prefix = 'small_candy_anon'; folder_name = "small_candy_anon"
 
     # edit resultsdir to match folder structure
     plot_parameters, file_parameters = construct_default_parameters(file_prefix, folder_name, make_plots=True, execution_dir_level='one')

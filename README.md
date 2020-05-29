@@ -13,7 +13,7 @@ from breathpy.model.CoreTest import test_start_to_end_pipeline
 # define file prefix and default parameters
 file_prefix = 'small_candy_anon'; folder_name = "small_candy_anon"
 
-# if executing from BreathAnalysis/model use execution_dir_level='one',
+# if executing from breathpy/model use execution_dir_level='one'
 plot_parameters, file_parameters = construct_default_parameters(file_prefix, folder_name, make_plots=True, execution_dir_level='one')
 
 # create default parameters for preprocessing and evaluation
@@ -70,5 +70,4 @@ See
 > [A modular computational framework for automated peak extraction from ion mobility spectra, 2014, D’Addario *et. al*](https://doi.org/10.1186/1471-2105-15-25)
 
 ## Contact
-If you run into difficulties using BreathPy, please open an issue at our [GitHub](https://github.com/philmaweb/BreathPy) repository . Alternatively you can write an email to:
-* [Philipp Weber](mailto:pweber@imada.sdu.dk?subject=[BreathPy-PyPI]%20BreathPy)
+If you run into difficulties using BreathPy, please open an issue at our [GitHub](https://github.com/philmaweb/BreathPy) repository. Alternatively you can write an email to [Philipp Weber](mailto:pweber@imada.sdu.dk?subject=[BreathPy-PyPI]%20BreathPy).
