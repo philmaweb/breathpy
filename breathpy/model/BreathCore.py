@@ -2622,8 +2622,6 @@ class MccImsAnalysis(Analysis):
         peax_binary_path = self.peax_binary_path
         infilenames = [m.raw_filename for m in self.measurements]
 
-        import ipdb; ipdb.set_trace()
-
         tmp_dir = os.path.join(tempfile.gettempdir(), '.breath/peax_raw/{}'.format(hash(os.times())))
         have_created_temp_dir = any([".zip/" in fn for fn in infilenames])
 
@@ -5896,7 +5894,6 @@ class PredictionModel(object):
         outfile_names = [tmp + '/' + m.filename[:-4] + "_out.csv" for m in measurements]
         self.analysis.measurements = measurements
         self.analysis.outfile_names = outfile_names
-        import ipdb; ipdb.set_trace()
         self.analysis.preprocess()
         rmtree(tmp, ignore_errors=True)
 
