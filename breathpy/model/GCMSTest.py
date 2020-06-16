@@ -8,7 +8,7 @@ import pyopenms as oms
 from shutil import rmtree
 import tempfile
 
-from sklearn.externals import joblib
+import joblib
 
 from model.BreathCore import MccImsAnalysis, GCMSAnalysis, PredictionModel, construct_default_processing_evaluation_steps, construct_default_parameters
 

@@ -333,6 +333,11 @@ class ClusterPlot(object):
         :param plot_parameters:
         :return:
         """
+        figure_dir = f"{plot_parameters['plot_dir']}clustering"
+        # first check whether directory exists for figure output - or whether we want to use a buffer
+        if not plot_parameters.get('use_buffer', False):
+            Path(figure_dir).mkdir(parents=True, exist_ok=True)
+
         plots_to_return = []
         peak_alignment_result = intermediate_analysis_result.peak_alignment_result
         peak_detection_steps = intermediate_analysis_result.peak_detection_combined
@@ -388,6 +393,10 @@ class ClusterPlot(object):
         :param plot_parameters:
         :return:
         """
+        figure_dir = f"{plot_parameters['plot_dir']}clustering"
+        # first check whether directory exists for figure output - or whether we want to use a buffer
+        if not plot_parameters.get('use_buffer', False):
+            Path(figure_dir).mkdir(parents=True, exist_ok=True)
 
         peak_alignment_result = mcc_ims_analysis.peak_alignment_result
         peak_detection_steps = mcc_ims_analysis.peak_detection_combined
@@ -596,6 +605,10 @@ class ClusterPlot(object):
         """
         return_figures = []
         figure_dir = f"{plot_parameters['plot_dir']}overlay/"
+        # first check whether directory exists for figure output - or whether we want to use a buffer
+        if not plot_parameters.get('use_buffer', False):
+            Path(figure_dir).mkdir(parents=True, exist_ok=True)
+
         # plot intensity matrix and setup axis
         ax, fig, irm_vals, rt_vals = ClusterPlot._setup_overlay_fast(intensity_matrix, plot_parameters, figure_dir)
 
@@ -1162,8 +1175,8 @@ class VennDiagram(object):
         fig = plt.figure()
         v = venn2(subsets=(individual_1, individual_2, intersection_12), set_labels=peak_detections)
         c = venn2_circles(subsets=(individual_1, individual_2, intersection_12), linestyle='dashed', linewidth=1, color="grey")
-        fig.savefig('{}venn_diagram/{}_venn2_{}_{}.png'.format(plot_parameters['plot_dir'],plot_prefix, comparison_peak_detection_result.index.values[0],
-                                                  comparison_peak_detection_result.index.values[1]), bbox_inches='tight')
+        comp_str = f"venn2_{comparison_peak_detection_result.index.values[0]}_{comparison_peak_detection_result.index.values[1]}"
+        fig.savefig(f"{plot_parameters['plot_dir']}venn_diagram/{plot_prefix}_{comp_str}.png", bbox_inches='tight')
         plt.close()
 
     @staticmethod
@@ -1194,10 +1207,8 @@ class VennDiagram(object):
                            intersection_all), set_labels=peak_detections)
         c = venn3_circles(subsets=(individual_1, individual_2, intersection_12, individual_3, intersection_13,
                                    intersection_23, intersection_all), linestyle='dashed', linewidth=1, color="grey")
-        fig.savefig('{}venn_diagram/{}_venn3_{}_{}_{}.png'.format(plot_parameters['plot_dir'], plot_prefix,
-                                                     comparison_peak_detection_result.index.values[0],
-                                                     comparison_peak_detection_result.index.values[1],
-                                                     comparison_peak_detection_result.index.values[2]),bbox_inches='tight')
+        comp_str = f"venn3_{comparison_peak_detection_result.index.values[0]}_{comparison_peak_detection_result.index.values[1]}_{comparison_peak_detection_result.index.values[2]}"
+        fig.savefig(f"{plot_parameters['plot_dir']}venn_diagram/{plot_prefix}_{comp_str}.png",bbox_inches='tight')
         plt.close()
 
     @staticmethod
@@ -1244,7 +1255,7 @@ class VennDiagram(object):
                                     comparison_peak_detection_result.loc[peak_detections[3]]["{}_{}".format(peak_detections[1], peak_detections[2])]]))
         labels['1111'] = "{}".format(comparison_peak_detection_result.loc[:]['all'].max())
         fig, ax = venn.venn4(labels=labels, names=peak_detections)
-        fig.savefig('{}venn_diagram/{}_venn4.png'.format(plot_parameters['plot_dir'], plot_prefix),bbox_inches='tight')
+        fig.savefig(f"{plot_parameters['plot_dir']}venn_diagram/{plot_prefix}_venn4.png", bbox_inches='tight')
         plt.close()
 
     Venn2Diagram = _plot_venn2_diagram
@@ -1272,7 +1283,7 @@ class BoxPlot(object):
         # assert isinstance(analysis_result, AnalysisResult)
         plots_to_return = []
         print("Plotting Boxplots of the best features SEABORN")
-        figure_dir = "{}boxplots".format(plot_parameters['plot_dir'])
+        figure_dir = f"{plot_parameters['plot_dir']}boxplots"
         # first check whether directory exists for figure output - or whether we want to use a buffer
         if not plot_parameters.get('use_buffer', False):
             Path(figure_dir).mkdir(parents=True, exist_ok=True)

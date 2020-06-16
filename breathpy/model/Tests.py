@@ -3,7 +3,7 @@ import glob
 import zipfile
 from pathlib import Path
 
-from sklearn.externals import joblib
+import joblib
 
 import argparse
 

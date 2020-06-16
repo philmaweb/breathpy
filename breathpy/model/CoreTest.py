@@ -1,7 +1,7 @@
 import glob
 from pathlib import Path
 
-from sklearn.externals import joblib
+import joblib
 
 import tempfile
 import os
@@ -68,7 +68,7 @@ def test_start_to_end_pipeline(plot_params, file_params, preprocessing_steps, ev
     # check if output directory already exists
     if not Path(file_params['out_dir']).exists():
         # create directory if it doesnt exist already
-        Path(file_params['out_dir']).mkdir()
+        Path(file_params['out_dir']).mkdir(parents=True, exist_ok=True)
 
     # check if already peaxed, if yes, then read in peaxed files
     outfile_names = [file_params['out_dir'] + fn[:-4] + "_out.csv" for fn in in_file_names]
@@ -112,6 +112,10 @@ def test_start_to_end_pipeline(plot_params, file_params, preprocessing_steps, ev
 
     ims_analysis.align_peaks(file_prefix=file_params['file_prefix'])
     if plot_params['make_plots']:
+        # make sure folder exists
+        venn_dir_path = Path(f"{plot_params['plot_dir']}venn_diagram/")
+        venn_dir_path.mkdir(parents=True, exist_ok=True)
+
         if not isinstance(ims_analysis.comparison_peak_detection_result, pandas.core.frame.DataFrame):
             pass
         elif ims_analysis.comparison_peak_detection_result.shape[0] == 2:
@@ -128,7 +132,6 @@ def test_start_to_end_pipeline(plot_params, file_params, preprocessing_steps, ev
         # plot_params['plot_prefix'] = orig_prefix + "_slow"
         # ClusterPlot.OverlayAlignment(ims_analysis, plot_parameters=plot_params)
         # plot_params['plot_prefix'] = orig_prefix
-        # pdb.set_trace()
     if stop_after_alignment:
         return ims_analysis
 
@@ -151,7 +154,7 @@ def test_start_to_end_pipeline(plot_params, file_params, preprocessing_steps, ev
         TreePlot.DecisionTrees(ims_analysis.analysis_result, plot_parameters=plot_params)
 
     # continue with prediction and preprocessing of test set
-    tmp = os.path.join(tempfile.gettempdir(), '.breath/{}'.format(hash(os.times())))
+    tmp = os.path.join(tempfile.gettempdir(), f'.breath/{hash(os.times())}')
     os.makedirs(tmp)
 
     dataset_name = file_params['folder_path'].split("/")[-1]

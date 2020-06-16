@@ -1,6 +1,6 @@
 
 """
-Module defining the core elements of Breath Analysis
+Module defining the core elements of breathpy
 """
 __author__ = 'philmaweb, aaron_ruben'
 
@@ -38,12 +38,12 @@ from sklearn.cluster import (KMeans,
 from sklearn.model_selection import cross_validate
 
 
-from skimage.morphology import watershed
+from skimage.segmentation import watershed
 from skimage.feature import peak_local_max
 from sklearn.model_selection import StratifiedKFold
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import MultiLabelBinarizer
-from sklearn.externals import joblib
+import joblib
 from sklearn import tree, metrics
 from sklearn.preprocessing import label_binarize
 from sklearn.multiclass import OneVsRestClassifier
@@ -2255,7 +2255,7 @@ class MccImsAnalysis(Analysis):
                     ExternalPeakDetectionMethod.PEAX: self.external_peak_detection_peax,
                 }
                 # self.external_peak_detection_peax
-                print("Applying External Preprocessing with {}".format(external_step))
+                print(f"Applying External Preprocessing with {external_step}")
                 external_processing_map[external_step]()
                 # else:
                 #     raise NotImplementedError("Choose PeaX or a VisualNow Layer as ExternalPeakDetectionMethod")
@@ -2622,6 +2622,8 @@ class MccImsAnalysis(Analysis):
         peax_binary_path = self.peax_binary_path
         infilenames = [m.raw_filename for m in self.measurements]
 
+        import ipdb; ipdb.set_trace()
+
         tmp_dir = os.path.join(tempfile.gettempdir(), '.breath/peax_raw/{}'.format(hash(os.times())))
         have_created_temp_dir = any([".zip/" in fn for fn in infilenames])
 
@@ -2677,7 +2679,8 @@ class MccImsAnalysis(Analysis):
         p = multiprocessing.Pool(1)
         # save all output and error codes in a list
         # configuration file needs to be in the same directory as the execution level of the python script
-        # - bad parsing from peax, we cannot pass arguments directly and it doesnt accept another path
+        # - bad parsing from PEAX, we cannot pass arguments directly and it doesnt accept another path with -p as per help text
+        # check current dir with os.getcwd() , and copy parameters.cfg file there
         call_history = [(used_command, output, error) for used_command, output, error in
                         p.map(Analysis.execute_command, command_list)]  # provide all commands to execute
         return call_history
@@ -5893,6 +5896,7 @@ class PredictionModel(object):
         outfile_names = [tmp + '/' + m.filename[:-4] + "_out.csv" for m in measurements]
         self.analysis.measurements = measurements
         self.analysis.outfile_names = outfile_names
+        import ipdb; ipdb.set_trace()
         self.analysis.preprocess()
         rmtree(tmp, ignore_errors=True)
 

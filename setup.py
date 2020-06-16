@@ -9,7 +9,7 @@ README = (HERE / "README.md").read_text()
 
 # This call to setup() does all the work
 setup(
-    name="BreathPy",
+    name="breathpy",
     version="0.8.0",
     description="Breath analysis in python",
     long_description=README,
@@ -24,7 +24,7 @@ setup(
         "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
     ],
     python_requires='>=3.6',
-    packages=find_packages(exclude=['test.py']),
+    packages=find_packages(),
     include_package_data=True,
     install_requires=[
         "graphviz>=0.13.2",

@@ -13,8 +13,8 @@ import tempfile
 from itertools import zip_longest
 from seaborn import color_palette
 import warnings
-
-from sklearn.externals import six, joblib
+import joblib
+from sklearn.externals import six
 from sklearn.utils.validation import check_is_fitted
 from sklearn.tree import _criterion
 from sklearn.tree import _tree
