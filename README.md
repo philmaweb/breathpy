@@ -1,6 +1,7 @@
-# BreathPy Project
+# BreathPy
 
-## Process MCC/IMS data and experimental support for GC/MS + LC/MS data
+## Process breath samples of Multi-Capillary-Column Ion-Mobility-Spectrometry files
+### Now with experimental support for GC/MS + LC/MS data
 
 ## Usage  
 
@@ -24,7 +25,7 @@ test_start_to_end_pipeline(plot_parameters, file_parameters, preprocessing_steps
 ```
 
 For more complete examples see `model/CoreTest.py` `test_start_to_end_pipeline` and `test_resume_analysis`.
-Example data coming soon.
+The `small_candy_anon` example is included in the package under `data/small_candy_anon/`, more coming soon.
 
 ### GC/MS
 ```python
