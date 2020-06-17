@@ -14,7 +14,7 @@ from itertools import zip_longest
 from seaborn import color_palette
 import warnings
 import joblib
-from sklearn.externals import six
+import six
 from sklearn.utils.validation import check_is_fitted
 from sklearn.tree import _criterion
 from sklearn.tree import _tree
