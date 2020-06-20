@@ -24,8 +24,8 @@ from skimage import color as skcolor
 from sklearn.metrics import auc
 
 
-from model.BreathCore import PeakAlignmentMethod, MccImsAnalysis, MccImsMeasurement
-from model.BreathCore import deprecated
+from ..model.BreathCore import PeakAlignmentMethod, MccImsAnalysis, MccImsMeasurement
+from ..model.BreathCore import deprecated
 
 
 # Collection of plotting functions
@@ -226,6 +226,7 @@ class HeatmapPlot(object):
     @staticmethod
     def plot_feature_matrix(feature_matrix, class_label_dict, plot_parameters, outname=""):
         """
+        TODO needs annotation
         Visualize the feature matrix by class using the normalized intensity of each feature
         :param feature_matrix:
         :param class_label_dict:
@@ -963,7 +964,7 @@ class RocCurvePlot(object):
 
     @staticmethod
     def _plot_two_class_roc_curve(analysis_result, plot_parameters, limit_to_peak_detection_method_name=False):
-        from model.BreathCore import PerformanceMeasure
+        from ..model.BreathCore import PerformanceMeasure
         return_figures = []
         print("Plotting binary ROC curve")
         # assert isinstance(analysis_result, AnalysisResult)
@@ -972,6 +973,12 @@ class RocCurvePlot(object):
             plot_prefix = plot_parameters['plot_prefix']
 
         use_buffer = plot_parameters.get('use_buffer', False)
+
+        figure_dir = f"{plot_parameters['plot_dir']}roc_curve"
+        # first check whether directory exists for figure output - or whether we want to use a buffer
+        if not use_buffer:
+            Path(figure_dir).mkdir(parents=True, exist_ok=True)
+
         # plt.plot(analysis_result.statistics["false_positive_rates_of_splits"],
         #          analysis_result.statistics["true_positive_rates_of_splits"], lw=1, alpha=0.3, )
         # based on https://scikit-learn.org/stable/auto_examples/model_selection/plot_roc_crossval.html
@@ -1050,12 +1057,20 @@ class RocCurvePlot(object):
 
     @staticmethod
     def _plot_multiclass_class_roc_curve(analysis_result, plot_parameters, limit_to_peak_detection_method_name=False):
-        from model.BreathCore import PerformanceMeasure
+        from ..model.BreathCore import PerformanceMeasure
         return_figures = []
         print("Plotting multiclass ROC curve")
         plot_prefix = ''
         if 'plot_prefix' in plot_parameters:
             plot_prefix = plot_parameters['plot_prefix']
+
+        use_buffer = plot_parameters.get('use_buffer', False)
+
+        figure_dir = f"{plot_parameters['plot_dir']}roc_curve"
+        # first check whether directory exists for figure output - or whether we want to use a buffer
+        if not use_buffer:
+            Path(figure_dir).mkdir(parents=True, exist_ok=True)
+
 
         unique_class_labels = np.sort(np.unique(analysis_result.class_labels))
         for evaluation_method_name, statistics_by_pdm_name in analysis_result.analysis_statistics_per_evaluation_method_and_peak_detection.items():
@@ -1213,7 +1228,8 @@ class VennDiagram(object):
 
     @staticmethod
     def _plot_venn4_diagram(comparison_peak_detection_result, plot_parameters):
-        import view.venn as venn
+        from breathpy.view import venn
+
         if comparison_peak_detection_result.shape[0] < 4:
             raise AttributeError("Venn4Diagram requires 4 sets. You gave {} sets."
                                  "Choose Venn2- or Venn3Diagram, respectively".format(comparison_peak_detection_result.shape[0]))
@@ -1274,8 +1290,8 @@ class BoxPlot(object):
 
     @staticmethod
     def _plot_boxplot_of_best_features_seaborn(analysis_result, plot_parameters, limit_to_peak_detection_method_name=False):
-        from model.BreathCore import PerformanceMeasure
-        from model.BreathCore import MccImsAnalysis
+        from ..model.BreathCore import PerformanceMeasure
+        from ..model.BreathCore import MccImsAnalysis
         import statannot
         sns.set_style("whitegrid")
         # pdb.set_trace()

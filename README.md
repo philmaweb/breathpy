@@ -7,15 +7,35 @@
 
 ### MCC/IMS
 
+First prepare the example dataset by creating a subdirectory `data` and then linking the example files there.
 ```python
+from pathlib import Path
+from urllib.request import urlretrieve
+from zipfile import ZipFile
+
+# download example zip-archive
+url = 'https://github.com/philmaweb/BreathAnalysis.github.io/raw/master/data/small_candy_anon.zip'
+zip_dst = Path("data/small_candy_anon.zip")
+dst_dir = Path("data/small_candy_anon/")
+dst_dir.mkdir(parents=True, exist_ok=True)
+urlretrieve(url, zip_dst)
+
+# unzip archive into data subdirectory
+with ZipFile(zip_dst, "r") as archive_handle:
+    archive_handle.extractall(Path(dst_dir))
+```   
+
+Then run the example analysis like so:
+```python
+# import required functions
 from breathpy.model.BreathCore import construct_default_parameters, construct_default_processing_evaluation_steps
 from breathpy.model.CoreTest import test_start_to_end_pipeline
 
 # define file prefix and default parameters
 file_prefix = 'small_candy_anon'; folder_name = "small_candy_anon"
 
-# if executing from breathpy/model use execution_dir_level='one'
-plot_parameters, file_parameters = construct_default_parameters(file_prefix, folder_name, make_plots=True, execution_dir_level='one')
+# assuming the data directory is in the current directory
+plot_parameters, file_parameters = construct_default_parameters(file_prefix, folder_name, make_plots=True)
 
 # create default parameters for preprocessing and evaluation
 preprocessing_steps, evaluation_params_dict = construct_default_processing_evaluation_steps()

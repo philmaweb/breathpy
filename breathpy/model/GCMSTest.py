@@ -10,9 +10,9 @@ import tempfile
 
 import joblib
 
-from model.BreathCore import MccImsAnalysis, GCMSAnalysis, PredictionModel, construct_default_processing_evaluation_steps, construct_default_parameters
+from .BreathCore import MccImsAnalysis, GCMSAnalysis, PredictionModel, construct_default_processing_evaluation_steps, construct_default_parameters
 
-from model.GCMSTools import (
+from .GCMSTools import (
     align_feature_xmls,
     convert_consensus_map_to_feature_matrix,
     GCMSPeakDetectionMethod,
@@ -21,8 +21,8 @@ from model.GCMSTools import (
     run_centroid_sample,
     filter_feature_xmls,
 )
-from model.ProcessingMethods import GCMSAlignmentMethod
-from view.BreathVisualizations import HeatmapPlot, ClusterPlot, MaskPlot, RocCurvePlot, VennDiagram, BoxPlot, TreePlot
+from .ProcessingMethods import GCMSAlignmentMethod
+from ..view.BreathVisualizations import HeatmapPlot, ClusterPlot, MaskPlot, RocCurvePlot, BoxPlot, TreePlot
 
 
 def run_alignment_test(feature_xml_lis):

@@ -26,7 +26,7 @@ from io import StringIO, BytesIO
 
 import tempfile
 import os
-from shutil import rmtree
+from shutil import rmtree, copyfile
 
 import pywt
 import zipfile
@@ -54,13 +54,13 @@ from statsmodels.sandbox.stats.multicomp import multipletests
 from collections import Counter
 from matplotlib import colors
 
-from model.ProcessingMethods import (
+from .ProcessingMethods import (
     DenoisingMethod, NormalizationMethod,
     PeakDetectionMethod, ExternalPeakDetectionMethod, PeakAlignmentMethod,
     PerformanceMeasure, FeatureReductionMethod,
     GCMSPeakDetectionMethod, GCMSAlignmentMethod,)
 
-from model.GCMSTools import (
+from .GCMSTools import (
         run_centroid_sample, run_raw_wavelet_sample, align_feature_xmls, convert_consensus_map_to_feature_matrix,
         filter_mzml_or_mzxml_filenames)
 
@@ -662,7 +662,7 @@ class MccImsMeasurement(Measurement):
             :param filename : str(): path / BytesIO / StringIO to/of csv file
             :return: dict() rv
         """
-        from tools.tools import deduplicate_retention_times
+        from ..tools.tools import deduplicate_retention_times
         # extract retention times from each measurement run, which is in line 131 which starts with "\   , tR, 0.0, 0.453, 0.983, ..."
         # real labels starts in line 132 with "1/K0, tDcorr.\SNr, 0, 1, 2, 3, 4, 5,..."
         if isinstance(filename, (BytesIO, StringIO)) or hasattr(filename, "readlines"):
@@ -1546,7 +1546,7 @@ class Analysis(object):
                     return supported_file
                 except (ValueError, IndexError):
                     pass
-        raise ValueError("Couldn't find class label file in dir.")
+        raise ValueError(f"Couldn't find class label file in dir {dir_to_search}.")
 
             # label_dict = MccImsAnalysis.parse_class_labels("{}/{}".format(self.upload.path, class_label_file_name))
             # ims_filenames = [filename for filename in zip_content if str.endswith(filename, "_ims.csv")]
@@ -2673,6 +2673,11 @@ class MccImsAnalysis(Analysis):
         command_list = []
         for in_file, out_file in zip(in_filenames, out_filenames):
             command_list.append([path_to_peax_binary, in_file, out_file])
+
+        # need to copy parameters.cfg to current exectution dir
+        base_config_path = Path(path_to_peax_binary).parent/"parameters.cfg"
+        current_dir_path = Path(os.getcwd())/"parameters.cfg"
+        copyfile(base_config_path, current_dir_path)
 
         p = multiprocessing.Pool(1)
         # save all output and error codes in a list
@@ -5818,7 +5823,7 @@ class AnalysisResult(object):
         decision_tree_model.fit(trainings_matrix, self.class_labels)
         # extended tree.export_graphviz to make a sensible representation for us - using a bar to represent class distribution
         # features: Non rounded, no gini, percentage bar for %samples
-        from tools.tools import export_graphviz_personalized
+        from ..tools.tools import export_graphviz_personalized
         tree.export_graphviz_personalized = export_graphviz_personalized
 
         dot_data = tree.export_graphviz_personalized(
@@ -5889,6 +5894,7 @@ class PredictionModel(object):
         # make a new analysis with preprocessing and evaluation parameters
         # return the list of predicted classes for the input
         # create temp dir to write to
+
         tmp = os.path.join(tempfile.gettempdir(), '.breath/{}'.format(hash(os.times())))
         os.makedirs(tmp)
         outfile_names = [tmp + '/' + m.filename[:-4] + "_out.csv" for m in measurements]

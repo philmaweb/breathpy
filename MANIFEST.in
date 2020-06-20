@@ -1,0 +1,3 @@
+prune __pychache__/
+# make sure PEAX binaries are included
+recursive-include breathpy/bin *

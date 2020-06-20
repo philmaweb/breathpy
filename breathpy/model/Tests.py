@@ -17,7 +17,7 @@ import pandas as pd
 import seaborn as sns
 from matplotlib import colors
 
-from model.BreathCore import (MccImsMeasurement,
+from .BreathCore import (MccImsMeasurement,
                               MccImsAnalysis,
                               PeakDetectionMethod,
                               ExternalPeakDetectionMethod,

@@ -10,7 +10,7 @@ from shutil import rmtree
 import numpy as np
 
 import pandas
-from model.ProcessingMethods import (
+from .ProcessingMethods import (
     PeakDetectionMethod,
     ExternalPeakDetectionMethod,
     NormalizationMethod,
@@ -19,7 +19,7 @@ from model.ProcessingMethods import (
     PerformanceMeasure,
     FeatureReductionMethod,
 )
-from model.BreathCore import (MccImsMeasurement,
+from .BreathCore import (MccImsMeasurement,
                               MccImsAnalysis,
                               AnalysisResult,
                               PredictionModel,
@@ -27,8 +27,8 @@ from model.BreathCore import (MccImsMeasurement,
                               construct_default_processing_evaluation_steps,
                               get_breath_analysis_dir,
                               )
-from view.BreathVisualizations import HeatmapPlot, ClusterPlot, MaskPlot, RocCurvePlot, VennDiagram, BoxPlot, TreePlot
-from tools.tools import file_limit_stratify_selection_by_label
+from ..view.BreathVisualizations import HeatmapPlot, ClusterPlot, MaskPlot, RocCurvePlot, VennDiagram, BoxPlot, TreePlot
+from ..tools.tools import file_limit_stratify_selection_by_label
 
 def test_start_to_end_pipeline(plot_params, file_params, preprocessing_steps, evaluation_params_dict, number_of_files_limit=-1, specific_classes=[], stop_after_alignment=False):
     """

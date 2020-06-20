@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import pyopenms as oms
 
-from model.ProcessingMethods import GCMSPeakDetectionMethod
+from .ProcessingMethods import GCMSPeakDetectionMethod
 
 """
 Nomenclature: 

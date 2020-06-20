@@ -1,4 +1,5 @@
 # coding: utf-8
+# code is public domain - from https://github.com/tctianchi/pyvenn
 from itertools import chain
 from collections import Iterable
 import matplotlib.pyplot as plt

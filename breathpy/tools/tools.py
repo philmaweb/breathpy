@@ -21,8 +21,8 @@ from sklearn.tree import _tree
 
 from sklearn.tree.export import SENTINEL, _color_brew
 
-from model.BreathCore import MccImsAnalysis, MccImsMeasurement, PredictionModel
-from view.BreathVisualizations import RocCurvePlot, ClusterPlot, HeatmapPlot
+from ..model.BreathCore import MccImsAnalysis, MccImsMeasurement, PredictionModel
+from ..view.BreathVisualizations import RocCurvePlot, ClusterPlot, HeatmapPlot
 
 def extract_zip(path):
     """Extract a zip-archive, which contains the data files.
