@@ -24,6 +24,16 @@ from sklearn.tree.export import SENTINEL, _color_brew
 from ..model.BreathCore import MccImsAnalysis, MccImsMeasurement, PredictionModel
 from ..view.BreathVisualizations import RocCurvePlot, ClusterPlot, HeatmapPlot
 
+def get_peax_binary_path():
+    """
+    Return path where PEAX-binary is located
+    """
+    # would have expected to be relative to this file, but not the case.
+    # path is somehow relative to breathpy dir - odd
+    breathpy_path = Path(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    peax_path = breathpy_path/"bin/peax1.0-LinuxX64/peax"
+    return peax_path
+
 def extract_zip(path):
     """Extract a zip-archive, which contains the data files.
 
