@@ -3,9 +3,7 @@
 ## Process breath samples of Multi-Capillary-Column Ion-Mobility-Spectrometry files
 ### Now with experimental support for GC/MS + LC/MS data
 
-## Usage  
-
-### MCC/IMS
+## Usage MCC/IMS
 
 First prepare the example dataset by creating a subdirectory `data` and then linking the example files there.
 ```python
@@ -47,9 +45,22 @@ test_start_to_end_pipeline(plot_parameters, file_parameters, preprocessing_steps
 For more complete examples see `model/CoreTest.py` `test_start_to_end_pipeline` and `test_resume_analysis`.
 The `small_candy_anon` example is included in the package under `data/small_candy_anon/`, more coming soon.
 
-### GC/MS
+## Usage GC/MS
+Download and extract the example datasets into the current data subdirectory:
+```bash
+wget "https://github.com/bioinformatics-ca/bioinformatics-ca.github.io/raw/master/data_sets/Example_Jul0914_mzXML.zip"
+wget "https://github.com/bioinformatics-ca/bioinformatics-ca.github.io/raw/master/data_sets/Example_Jul1114_mzXML.zip"
+mkdir -p "data/eoe"
+unzip Example_Jul1114_mzXML.zip -d data/eoe/
+# overwrite the blank and alkstdt
+unzip -o Example_Jul0914_mzXML.zip -d data/eoe/
+# download class_labels.csv file
+wget -O data/eoe/eoe_class_labels.csv "https://github.com/philmaweb/BreathAnalysis.github.io/raw/master/data/eoe_class_labels.csv"
+```
+
 ```python
 from pathlib import Path
+import os
 from breathpy.model.BreathCore import construct_default_parameters,construct_default_processing_evaluation_steps
 from breathpy.model.ProcessingMethods import GCMSPeakDetectionMethod, PerformanceMeasure
 from breathpy.model.GCMSTest import run_gcms_platform_multicore
@@ -62,9 +73,9 @@ Dataset from https://bioinformaticsdotca.github.io/metabolomics_2018_mod2lab
 :return:
 """
 cross_val_num=5
-# use your local path to a dataset here 
-source_dir = "/home/philipp/Desktop/gcms_data/canada_2018/eoe/"
-target_dir = "/home/philipp/Desktop/gcms_data/canada_2018/eoe_out/"
+# or use your local path to a dataset here
+source_dir = Path(os.getcwd())/"data/eoe"
+target_dir = Path(os.getcwd())/"data/eoe_out"
 
 # will delete previous split and rewrite data
 train_df, test_df = generate_train_test_set_helper(source_dir, target_dir, cross_val_num=5)
@@ -83,7 +94,7 @@ _, evaluation_params_dict = construct_default_processing_evaluation_steps(cross_
 
 run_gcms_platform_multicore(sample_dir=train_dir, preprocessing_params=preprocessing_params_dict, evaluation_parms=evaluation_params_dict)
 ```
-See `model/GCMSTest.py` for reference. Example data coming soon.
+Also see `model/GCMSTest.py` for reference. 
 
 ### License
 `BreathPy` is licensed under GPLv3, but contains binaries for PEAX, which is a free software for academic use only.

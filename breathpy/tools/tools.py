@@ -808,7 +808,7 @@ def prepare_peak_detection_results_zip(file_params, preprocessing_steps):
     data_dir = file_params['folder_path']
     results_dir = file_params['out_dir']
     # filter out peak_detection_methods
-    from model.BreathCore import PeakDetectionMethod, ExternalPeakDetectionMethod
+    from .model.BreathCore import PeakDetectionMethod, ExternalPeakDetectionMethod
     pdms = []
     for prep_step in preprocessing_steps:
         try:
@@ -1173,8 +1173,7 @@ def debug_import_differences():
     Use candy dataset
     :return:
     """
-    from model.ProcessingMethods import NormalizationMethod, DenoisingMethod, ExternalPeakDetectionMethod, PeakDetectionMethod
-    from tools.tools import compare_peax_results
+    from .model.ProcessingMethods import NormalizationMethod, DenoisingMethod, ExternalPeakDetectionMethod, PeakDetectionMethod
     # use default values from methods for all of them
 
     # make analysis

@@ -6,7 +6,7 @@ matplotlib.use("Agg")
 import numpy as np
 import pandas as pd
 
-from model.BreathCore import MccImsAnalysis, MccImsMeasurement
+from .model.BreathCore import MccImsAnalysis, MccImsMeasurement
 from sklearn.model_selection import train_test_split
 from shutil import copy as file_copy
 from shutil import rmtree
