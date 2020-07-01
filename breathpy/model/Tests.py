@@ -58,6 +58,8 @@ def test_class_label_parsing():
 
 def test_percentage_reduction():
     # np.random.seed(1)
+    # only works until a percentage of 50% - below the example construction inverse row property
+    #   has a higher percentage and therefore will be present after filtering
     def prepare_feature_matrix(no_samples_per_class, no_features, lis_of_percentages, name_lis_of_features):
         assert (no_samples_per_class % 10) == 0
         assert not any([perc % 10 for perc in lis_of_percentages])
