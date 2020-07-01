@@ -1,21 +1,16 @@
-import pdb
-import glob
 import zipfile
 from pathlib import Path
 
 import joblib
-
 import argparse
 
 import tempfile
 import os
 from shutil import rmtree
-import json
 import math
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from matplotlib import colors
 
 from .BreathCore import (MccImsMeasurement,
                               MccImsAnalysis,
@@ -30,28 +25,25 @@ from .BreathCore import (MccImsMeasurement,
                               PredictionModel
                               )
 
-
-from sklearn.model_selection import cross_validate
-from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.svm import SVC
+from urllib.request import urlretrieve
+from ..tools.tools import get_peax_binary_path
 
 import matplotlib.pyplot as plt
 
-def test_class_label_parsing():
-    labels1 = MccImsAnalysis.parse_class_labels("/home/philipp/dev/breathpy/data/merged_candy/class_labels.txt")
-    labels2 = MccImsAnalysis.parse_class_labels("/home/philipp/dev/breathpy/data/merged_candy/class_labels.tsv")
-    labels3 = MccImsAnalysis.parse_class_labels("/home/philipp/dev/breathpy/data/merged_candy/class_labels.csv")
+def test_class_label_parsing(tmp_dir):
+    labels1 = MccImsAnalysis.parse_class_labels(str(Path(tmp_dir)/"data/small_candy_anon/class_labels.txt"))
+    labels2 = MccImsAnalysis.parse_class_labels(str(Path(tmp_dir)/"data/small_candy_anon/class_labels.tsv"))
+    labels3 = MccImsAnalysis.parse_class_labels(str(Path(tmp_dir)/"data/small_candy_anon/class_labels.csv"))
 
-    labels4 = MccImsAnalysis.parse_class_labels("/home/philipp/dev/breathpy/data/merged_candy/class_labels.zip/class_labels.csv")
-    labels5 = MccImsAnalysis.parse_class_labels("/home/philipp/dev/breathpy/data/merged_candy/class_labels.zip/class_labels.tsv")
-    labels_solution_str = {'BD18_1408280826_ims.csv': 'menthol', 'BD18_1408280834_ims.csv': 'citrus', 'BD18_1408280838_ims.csv': 'citrus', 'BD18_1408280841_ims.csv': 'menthol', 'BD18_1408280844_ims.csv': 'menthol', 'BD18_1408280851_ims.csv': 'citrus', 'BD18_1511121654_ims.csv': 'menthol', 'BD18_1511121658_ims.csv': 'citrus', 'BD18_1511121702_ims.csv': 'citrus', 'BD18_1511121706_ims.csv': 'menthol', 'BD18_1511121709_ims.csv': 'citrus', 'BD18_1511121712_ims.csv': 'citrus', 'BD18_1511121716_ims.csv': 'citrus', 'BD18_1511121719_ims.csv': 'menthol', 'BD18_1511121723_ims.csv': 'menthol', 'BD18_1511121727_ims.csv': 'citrus', 'BD18_1511121730_ims.csv': 'menthol', 'BD18_1511121734_ims.csv': 'menthol', 'BD18_1511121738_ims.csv': 'menthol', 'BD18_1511121742_ims.csv': 'citrus'}
-    assert labels1 == labels_solution_str
-    assert labels2 == labels_solution_str
+    labels4 = MccImsAnalysis.parse_class_labels(str(Path(tmp_dir)/"data/small_candy_anon.zip/class_labels.csv"))
+    # labels5 = MccImsAnalysis.parse_class_labels("/home/philipp/dev/breathpy/data/merged_candy/class_labels.zip/class_labels.tsv")
+    labels_solution_str = {'BD18_1408280826_ims.csv': 'menthol', 'BD18_1408280834_ims.csv': 'citrus', 'BD18_1408280838_ims.csv': 'citrus', 'BD18_1408280841_ims.csv': 'menthol', 'BD18_1408280844_ims.csv': 'menthol', 'BD18_1408280851_ims.csv': 'citrus'}
+    labels_tiny_solution_str = {'BD18_1408280826_ims.csv': 'menthol', 'BD18_1408280834_ims.csv': 'citrus'}
+    assert labels1 == labels_tiny_solution_str
+    assert labels2 == labels_tiny_solution_str
     assert labels3 == labels_solution_str
     assert labels4 == labels_solution_str
-    assert labels5 == labels_solution_str
+    # assert labels5 == labels_solution_str
     print("Passed Test for class_label parsing")
 
 
@@ -112,10 +104,10 @@ def test_percentage_reduction():
         return pd.Series(index=cols, data=bools, dtype=bool)
 
     cols = trainings_matrix.columns.values
-    val_100 = [1,0,0,0,0]
-    val_90 = [1,1,0,0,0]
-    val_60 = [1,1,0,0,0]
-    val_50 = [1,1,1,0,0]
+    val_100 = [1,0,0,0,1]
+    val_90 = [1,1,0,0,1]
+    val_60 = [1,1,0,0,1]
+    val_50 = [1,1,1,0,1]
 
     assert np.all(column_mask_100 == prepare_expected_result(cols, val_100))
     assert np.all(column_mask_90 == prepare_expected_result(cols, val_90))
@@ -124,25 +116,56 @@ def test_percentage_reduction():
     print("Passed Test for percentage reduction")
 
 
-def load_sample_normalized_measurement():
-    m = MccImsMeasurement(raw_filename="/home/philipp/PycharmProjects/django_mockup/mysite/breath/external/breathpy/data/merged_candy/BD18_1408280826_ims.csv")
+def download_and_extract_test_set():
+    tmp_dir = tempfile.gettempdir()
+    # download example zip-archive
+    zip0 = 'https://github.com/philmaweb/BreathAnalysis.github.io/raw/master/data/small_candy_anon.zip'
+    zip_dst = Path(tmp_dir)/"data/small_candy_anon.zip"
+    dst_dir = Path(tmp_dir)/"data/small_candy_anon/"
+    dst_dir.mkdir(parents=True, exist_ok=True)
+
+    # also download other formats for class label parsing testing
+    tsv = "https://github.com/philmaweb/BreathAnalysis.github.io/raw/master/class_labels.tsv"
+    txt = "https://github.com/philmaweb/BreathAnalysis.github.io/raw/master/class_labels.txt"
+
+    urlretrieve(zip0, zip_dst)
+    urlretrieve(tsv, dst_dir/"class_labels.tsv")
+    urlretrieve(txt, dst_dir/"class_labels.txt")
+
+    # unzip archive into data subdirectory
+    with zipfile.ZipFile(zip_dst, "r") as archive_handle:
+        archive_handle.extractall(Path(dst_dir))
+    return tmp_dir
+
+
+def load_sample_normalized_measurement(tmp_dir):
+    m = MccImsMeasurement(
+        raw_filename=f"{tmp_dir}/data/small_candy_anon/BD18_1408280826_ims.csv")
     m.normalize_by_intensity()
     return m
 
-def load_sample_raw_measurement():
-    return MccImsMeasurement(raw_filename="/home/philipp/PycharmProjects/django_mockup/mysite/breath/external/breathpy/data/merged_candy/BD18_1408280826_ims.csv")
+def load_sample_raw_measurement(tmp_dir):
+    return MccImsMeasurement(
+        raw_filename=f"{tmp_dir}/data/small_candy_anon/BD18_1408280826_ims.csv")
+
+def test_measurement_parsing(tmp_dir):
+    # TODO check for attributes
+    raw = load_sample_raw_measurement(tmp_dir)
+    normed = load_sample_normalized_measurement(tmp_dir)
 
 def run_peax():
     import subprocess
     m = load_sample_raw_measurement()
-    peax_binary = "/home/philipp/PycharmProjects/django_mockup/mysite/breath/external/breathpy/bin/peax1.0-LinuxX64/peax"
+    peax_binary = get_peax_binary_path()
     raw_path = m.raw_filename
     result_path = m.raw_filename + "peax_out"
     subprocess.check_call([peax_binary, raw_path, result_path])
 
 def main():
+    tmpdir = download_and_extract_test_set()
     test_percentage_reduction()
-    test_class_label_parsing()
+    test_class_label_parsing(tmpdir)
+    test_measurement_parsing(tmpdir)
 
 if __name__ == '__main__':
     main()
