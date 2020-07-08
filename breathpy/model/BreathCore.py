@@ -3674,6 +3674,7 @@ class MccImsAnalysis(Analysis):
         1 determine noise threshold - call presence if satisfies
           we hardcoded a minimum intensity value - which is a factor of maximum intensity
         --> needs to be greater than 10000th of maximum intensity
+        Note: intensity values for PEAX are not normalized, so min intensity threshold filtering doesnt apply
         2 distinguish between BitPeakAlignmentResult and FloatPeakAlignmentResult
           Bit PeakResult can immediately be filtered by percentage_threshold
           FloatPeakAlignmentResult needs to be handled by converting to intermediate BitPeak result and then applying percentage_threshold
