@@ -1,17 +1,20 @@
 import glob
-
 import matplotlib
 # important - would lead to a segmentation fault if importing pyplot otherwise
 matplotlib.use("Agg")
+
+from collections import Counter
+from io import StringIO, BytesIO
 import numpy as np
 import pandas as pd
-
-from .model.BreathCore import MccImsAnalysis, MccImsMeasurement
-from sklearn.model_selection import train_test_split
+from pathlib import Path
 from shutil import copy as file_copy
 from shutil import rmtree
-from pathlib import Path
-from collections import Counter
+from sklearn.model_selection import train_test_split
+from zipfile import ZipFile, ZIP_DEFLATED
+
+from .model.BreathCore import MccImsAnalysis, MccImsMeasurement
+
 
 def generate_full_candy_classes(plot_params, file_params, preprocessing_steps, evaluation_params_dict):
     all_files = glob.glob(file_params['data_dir'] + "*_ims.csv")
@@ -140,22 +143,9 @@ def generate_train_test_set_helper(sample_dir, target_dir, cross_val_num=5, seed
     y = [v for v in class_labels.values()]
     # class_labels[m.filename]
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=1. / cross_val_num, random_state=seed, stratify=y)  # will always create same split, unless see specified
+    test_fraction = 1. / cross_val_num
+    train_df, test_df = split_labels_ratio(class_labels, train_val_fraction=1-test_fraction, seed=seed)
 
-    # labels are not sorted anymore - is important for feature matrix and class labels though
-    X_tr_args = np.argsort(X_train)
-    X_te_args = np.argsort(X_test)
-
-    X_train = np.take_along_axis(np.array(X_train), X_tr_args, axis=0)
-    X_test = np.take_along_axis(np.array(X_test), X_te_args, axis=0)
-
-    y_train = np.take_along_axis(np.array(y_train), X_tr_args, axis=0)
-    y_test = np.take_along_axis(np.array(y_test), X_te_args, axis=0)
-    # for x,y in zip(X_train, y_train): print(x, y)
-    # for x, y in zip(X_test, y_test): print(x, y)
-
-    train_df = pd.DataFrame({"name": X_train, "label": y_train})
-    test_df = pd.DataFrame({"name": X_test, "label": y_test})
     train_dir = str(target_dir_path) + "/" + f"train_{dataset_name}/"
     test_dir = str(target_dir_path) + "/" + f"test_{dataset_name}/"
 
@@ -223,15 +213,14 @@ def generate_train_test_set_helper(sample_dir, target_dir, cross_val_num=5, seed
                 print(f"Created feature matrices {tr_fm_fn} and {te_fm_fn}")
 
                 # also implement for other branches - pdr and preprocessed
-                from zipfile import ZipFile
                 for t_dir, t_fm, t_cl, in zip([train_dir, test_dir], [tr_fm_fn, te_fm_fn],
                                               [tr_class_label_fn, te_class_label_fn]):
                     t_dir_path = Path(t_dir)
                     t_dir_name = t_dir_path.stem
 
                     zip_path_tr = t_dir_path / f"{t_dir_name}.zip"
-                    with ZipFile(zip_path_tr, 'w') as trzip:
-                        trzip.write(t_fm, t_fm.name)  # needs to exist to write to zip
+                    with ZipFile(zip_path_tr, 'w', ZIP_DEFLATED) as trzip:
+                        trzip.write(t_fm, t_fm.name)  # needs to exist as file object on disk to to write to zip
                         trzip.write(t_cl, t_cl.name)
 
             except ValueError:
@@ -269,6 +258,56 @@ def generate_train_test_set_helper(sample_dir, target_dir, cross_val_num=5, seed
     print(f"{'|' * 40}\nFinished preparation of {dataset_name}\n")
     return train_df, test_df
 
+
+def split_labels_ratio(class_label_dict, train_val_fraction, seed=42):
+    """
+    Split class labels into train and validation using stratified split
+    """
+    X = [k for k in class_label_dict.keys()]
+    y = [v for v in class_label_dict.values()]
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=train_val_fraction, random_state=seed,
+                                                        stratify=y)  # , shuffle=True)  # will always create same split
+
+    # labels might not be sorted
+    X_tr_args = np.argsort(X_train)
+    X_te_args = np.argsort(X_test)
+
+    X_train = np.take_along_axis(np.array(X_train), X_tr_args, axis=0)
+    X_test = np.take_along_axis(np.array(X_test), X_te_args, axis=0)
+
+    y_train = np.take_along_axis(np.array(y_train), X_tr_args, axis=0)
+    y_test = np.take_along_axis(np.array(y_test), X_te_args, axis=0)
+
+    train_df = pd.DataFrame({"name": X_train, "label": y_train})
+    test_df = pd.DataFrame({"name": X_test, "label": y_test})
+    return train_df, test_df
+
+
+def write_raw_files_to_zip(raw_filenames, class_label_dict, origin_zip_fn):
+    """
+    Write passed `raw_filenames`, `class_label_dict` from `origin_zip_fn` to `target_zip` archive
+    returns: buffer
+    """
+    # make a csv file and write to buffer
+
+    class_label_df = pd.DataFrame(list(class_label_dict.items()), columns=["name", "label"])
+    class_label_buffer = StringIO()
+    class_label_df[['name', 'label']].to_csv(class_label_buffer, sep=",", index=False)
+
+    # write to target zip
+    buffer = BytesIO()
+    with ZipFile(buffer, 'w', ZIP_DEFLATED) as target_zip:
+        target_zip.writestr("class_labels.csv", class_label_buffer.getvalue())
+
+        # write from origin_zip
+        with ZipFile(origin_zip_fn, 'r') as origin_zip:
+            # get buffer from zip - and rewrite to in memory zip
+            for fn_to_extract in raw_filenames:
+                with origin_zip.open(fn_to_extract) as zopen:
+                    target_zip.writestr(fn_to_extract, zopen.read())
+
+    return buffer
 
 def generate_train_test_sets(dir_full_set, root_target_dir, cross_val_num=5, seed=42):
 
