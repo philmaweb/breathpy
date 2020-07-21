@@ -302,15 +302,22 @@ def align_feature_xmls(feature_xml_lis, consensus_map_out_path="", class_label_d
             aligner.align(current_map, transformation_description)
         except RuntimeError as re:
             if 'max_num_peaks_considered' in str(re):
-                # retry with higher threshold - probably algae dataset
+                # retry with higher threshold - required for algae dataset
                 default_max_num_peaks_considered = 15000  # 15 fold - makes it a lot slower but less error prone
                 aligner_params.setValue(max_num_peaks_key, default_max_num_peaks_considered)
                 default_max_scaling_value = 20.0  # need to increase to 20
                 aligner_params.setValue(max_scaling_key, default_max_scaling_value)
-                print(f"Encountered GC/MS Clustering issue - setting 'max_num_peaks_considered' to {default_max_num_peaks_considered} and 'superimposer:max_scaling' to {default_max_scaling_value}")
+
+                # max shift could also be off - issue for ckd dataset
+                default_max_shift_value = 2000.0  # need to increase from 1000 to 2000
+                max_shift_key = b'superimposer:max_shift'
+                aligner_params.setValue(max_shift_key, default_max_shift_value)
+
+                print(f"Encountered GC/MS Clustering issue - setting 'max_num_peaks_considered' to {default_max_num_peaks_considered}, 'superimposer:max_scaling' to {default_max_scaling_value} and 'superimposer:max_shift' to {default_max_shift_value}")
                 aligner.setParameters(aligner_params)
                 aligner.setReference(reference_map)
                 aligner.align(current_map, transformation_description)
+
 
         current_map.updateRanges()
         reference_map.updateRanges()
