@@ -1157,21 +1157,9 @@ class RocCurvePlot(object):
 class VennDiagram(object):
     """
     Plot Venn diagrams.
-
+    Visualize the overlap of different PeakDetectionMethods
     The venn import allows to create venn diagrams with more than 3 sets
     """
-
-    @staticmethod
-    def _plot_venn_diagram_from_peak_detection_result(comparison_peak_detection_result, plot_parameters):
-        """
-        Visualize the overlap of different PeakDetectionMethods
-        :param peak_detection_result:
-        :param plot_parameters:
-        :return:
-        """
-        VennDiagram._plot_venn2_diagram(comparison_peak_detection_result, plot_parameters)
-        VennDiagram._plot_venn3_diagram(comparison_peak_detection_result, plot_parameters)
-        VennDiagram._plot_venn4_diagram(comparison_peak_detection_result, plot_parameters)
 
     @staticmethod
     def _plot_venn2_diagram(comparison_peak_detection_result, plot_parameters):
@@ -1179,9 +1167,9 @@ class VennDiagram(object):
             raise AttributeError("Venn2Diagram requires 2 sets. You gave {} sets."
                                  "Choose Venn3- or Venn4Diagram, respectively".format(
                 comparison_peak_detection_result.shape[0]))
-        plot_prefix = ''
-        if 'plot_prefix' in plot_parameters:
-            plot_prefix = plot_parameters['plot_prefix']
+
+        plot_prefix = plot_parameters.get('plot_prefix', '')
+
         peak_detections = sorted(comparison_peak_detection_result.index.values)
         individual_1 = comparison_peak_detection_result.loc[peak_detections[0]]['individual']
         individual_2 = comparison_peak_detection_result.loc[peak_detections[1]]['individual']
@@ -1197,15 +1185,11 @@ class VennDiagram(object):
     @staticmethod
     def _plot_venn3_diagram(comparison_peak_detection_result, plot_parameters):
 
-        if comparison_peak_detection_result.shape[0] < 3:
-            raise AttributeError("Venn3Diagram requires 3 sets. You gave {} sets."
-                                 "Choose Venn2- or Venn3Diagram, respectively".format(comparison_peak_detection_result.shape[0]))
-        if comparison_peak_detection_result.shape[0] > 3:
+        if comparison_peak_detection_result.shape[0] != 3:
             raise AttributeError("Venn3Diagram requires 3 sets. You gave {} sets."
                                  "Choose Venn2- or Venn4Diagram, respectively".format(comparison_peak_detection_result.shape[0]))
-        plot_prefix = ''
-        if 'plot_prefix' in plot_parameters:
-            plot_prefix = plot_parameters['plot_prefix']
+
+        plot_prefix = plot_parameters.get('plot_prefix', '')
         peak_detections = sorted(comparison_peak_detection_result.index.values)
         individual_1 = comparison_peak_detection_result.loc[peak_detections[0]]['individual']
         individual_2 = comparison_peak_detection_result.loc[peak_detections[1]]['individual']
@@ -1236,9 +1220,9 @@ class VennDiagram(object):
         if comparison_peak_detection_result.shape[0] > 4:
             raise AttributeError("Venn4Diagram requires 4 sets. You gave {} sets."
                                  "A VennDiagram with more than 4 sets is to complex. Choose another from of visualization".format(comparison_peak_detection_result.shape[0]))
-        plot_prefix = ''
-        if 'plot_prefix' in plot_parameters:
-            plot_prefix = plot_parameters['plot_prefix']
+
+        plot_prefix = plot_parameters.get('plot_prefix', '')
+
         labels = dict()
         peak_detections = sorted(comparison_peak_detection_result.index.values)
         labels['1000'] = "{}".format(comparison_peak_detection_result.loc[peak_detections[0]]['individual'])

@@ -18,6 +18,7 @@ from itertools import compress, combinations, chain
 from typing import Dict, Any, Union
 
 import numpy as np
+from numpy import interp
 import pandas as pd
 import scipy.ndimage as ndimage
 from scipy.ndimage.morphology import white_tophat
@@ -47,7 +48,6 @@ import joblib
 from sklearn import tree, metrics
 from sklearn.preprocessing import label_binarize
 from sklearn.multiclass import OneVsRestClassifier
-from scipy import interp
 from scipy.stats import mannwhitneyu
 from statsmodels.sandbox.stats.multicomp import multipletests
 
@@ -3022,7 +3022,7 @@ class MccImsAnalysis(Analysis):
         """
         Align Peaks between measurements with clustering methods
         documentation for scikit-learn clustering methods: http://scikit-learn.org/stable/modules/clustering.html
-        :param alignment_result_type: Defines the result type of the alignement
+        :param alignment_result_type: Defines the result type of the alingment
         :param kwargs: dictionary holding key value pairs for clustering algorithms
         :return:
         """
@@ -4892,97 +4892,6 @@ class AnalysisResult(object):
         return result
 
 
-
-    # @staticmethod
-    # def multiclass_prediction_evaluation(model, classes_valid, probabilites, binary_labels):
-    #     """
-    #     evaluate the prediction of the classes of the test set for a multi class case with false and
-    #     true positive rate, and micro and macro averaged ROC-AUC, respectively
-    #     :param model: trained model
-    #     :param probabilities: prediction probabilities
-    #     :param classes_valid: class labels of the validation set
-    #     :param binary_labels: binary class labels
-    #     :return: AUC (micro, macro, class specific); SEN (micro, macro, class specific), FPR of splits, TPR of splits
-    #     """
-    #     false_positive_rates_of_splits, true_positive_rates_of_splits = [], []
-    #     sensitivities_micro, sensitivities_macro = [], []
-    #     false_positive_rate_classes = dict()
-    #     sensitivities_classes = dict()
-    #     area_under_curve_classes = dict()
-    #     for i in range(binary_labels.shape[1]):
-    #         false_positive_rate_classes[i] = []
-    #         sensitivities_classes[i] = []
-    #         area_under_curve_classes[i] = []
-    #     areas_under_curve_micro, areas_under_curve_macro = [], []
-    #     false_positive_rate = np.linspace(0, 1, 100)
-    #     if isinstance(model, RandomForestClassifier):
-    #         for i in range(len(probabilites)):
-    #             false_positive_rate_micro, true_positive_rate_micro, thresholds = roc_curve(classes_valid[:, i],
-    #                                                                                         probabilites[i][:, 1])
-    #             areas_under_curve_micro.append(roc_auc_score(classes_valid[:, i], probabilites[i][:, 1], average='micro'))
-    #             areas_under_curve_macro.append(roc_auc_score(classes_valid[:, i], probabilites[i][:, 1], average='macro'))
-    #             # get the micro sensitivities
-    #             sensitivities_micro.append(interp(false_positive_rate, false_positive_rate_micro,
-    #                                               true_positive_rate_micro))
-    #             sensitivities_micro[-1][0] = 0.0
-    #             false_positive_rates_of_splits.append(false_positive_rate_micro)
-    #             true_positive_rates_of_splits.append(true_positive_rate_micro)
-    #         for label in range(binary_labels.shape[1]):
-    #             false_positive_rate_class, true_positive_rate_class, thresholds = roc_curve(classes_valid[:, label],
-    #                                                                                         probabilites[label][:, 1])
-    #             area_under_curve_classes[label].append(roc_auc_score(classes_valid[:, label], probabilites[label][:, 1]))
-    #
-    #             false_positive_rate_classes[label].extend(false_positive_rate_class)
-    #             sensitivities_classes[label].append(interp(false_positive_rate,
-    #                                                        false_positive_rate_class, true_positive_rate_class))
-    #             sensitivities_classes[label][-1][0] = 0.0
-    #             # Get the macro sensitivity
-    #             sensitivities_macro.append(interp(false_positive_rate, false_positive_rate_class,true_positive_rate_class))
-    #             sensitivities_macro[-1][0] = 0.0
-    #
-    #     elif isinstance(model, OneVsRestClassifier):
-    #         false_positive_rate_micro, true_positive_rate_micro, thresholds = roc_curve(classes_valid.ravel(),
-    #                                                                                     probabilites.ravel())
-    #         areas_under_curve_micro.append(roc_auc_score(classes_valid, probabilites, average='micro'))
-    #         areas_under_curve_macro.append(roc_auc_score(classes_valid, probabilites, average='macro'))
-    #
-    #         # get the micro sensitivities
-    #         sensitivities_micro.append(interp(false_positive_rate, false_positive_rate_micro,
-    #                                           true_positive_rate_micro))
-    #         sensitivities_micro[-1][0] = 0.0
-    #         false_positive_rates_of_splits.append(false_positive_rate_micro)
-    #         true_positive_rates_of_splits.append(true_positive_rate_micro)
-    #         for label in range(binary_labels.shape[1]):
-    #             false_positive_rate_class, true_positive_rate_class, thresholds = roc_curve(classes_valid[:, label],
-    #                                                                                           probabilites[:, label])
-    #             area_under_curve_classes[label].append(roc_auc_score(classes_valid[:, label], probabilites[:, label]))
-    #
-    #             false_positive_rate_classes[label].extend(false_positive_rate_class)
-    #             sensitivities_classes[label].append(interp(false_positive_rate,
-    #                                                        false_positive_rate_class, true_positive_rate_class))
-    #             sensitivities_classes[label][-1][0] = 0.0
-    #             # Get the macro sensitivity
-    #             sensitivities_macro.append(interp(false_positive_rate, false_positive_rate_class, true_positive_rate_class))
-    #             sensitivities_macro[-1][0] = 0.0
-    #     return areas_under_curve_micro, areas_under_curve_macro, area_under_curve_classes, sensitivities_micro, sensitivities_macro, sensitivities_classes, false_positive_rates_of_splits, true_positive_rates_of_splits
-
-    # @staticmethod
-    # def class_evaluation_wrapper(func, **kwargs):
-    #     """
-    #     Wraps muticlass_evaluation into dict with keys and values
-    #     :return:
-    #     """
-    #     rv = OrderedDict()
-    #     auc_micro, auc_macro, auc_classes, sensitivities_micro, sensitivity_macro, sensitivity_classes, FPR_of_splits, TPR_of_splits = func(**kwargs)
-    #     rv['auc_micro'] = auc_micro
-    #     rv['auc_macro'] = auc_macro
-    #     rv['auc_classes'] = auc_classes
-    #     # rv['sensitivity_classes'] = sensitivity_classes
-    #     # rv['sensitivities_micro'] = sensitivities_micro
-    #     rv['fpr_of_splits'] = FPR_of_splits
-    #     rv['tpr_of_splits'] = TPR_of_splits
-    #     return rv
-
     @staticmethod
     def train_random_forest_classifier(trainings_matrix, trainings_labels, original_labels, classifier='OneVsRest', n_estimators=2000, min_samples_split=2, max_features='auto'):
         """
@@ -5016,7 +4925,6 @@ class AnalysisResult(object):
         # from sklearn.utils.validation import check_is_fitted
         # check_is_fitted(model, "estimator_")
         # model.predict_proba(trainings_matrix)
-        # pdb.set_trace()
         return model
 
 
