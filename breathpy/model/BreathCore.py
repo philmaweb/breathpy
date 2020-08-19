@@ -1283,6 +1283,7 @@ class FloatPeakAlignmentResult(PeakAlignmentResult):
                         deviation_x = group['radius_inverse_reduced_mobility'].values[0]
                         deviation_y = group['radius_retention_time'].values[0]
                     else:
+                        # THIS is not a good idea for DBSCAN, will most likely overwrite the minimum radius
                         # use population std, series.std() will calculate a sample std with 1 degree of freedom
                         deviation_x = np.maximum(np.std(group['inverse_reduced_mobility'], ddof=0),
                                       self.MINIMUM_INVERSE_REDUCED_MOBILITY_RADIUS)
@@ -3281,7 +3282,7 @@ class MccImsAnalysis(Analysis):
                         rt = row['retention_time']
 
                         # need to make work for application of DBSCAN - can be quite a lot of missed peaks -
-                        # each of them should get their specific peak id as not part of any cluster
+                        # each of them is assigned their peak id based on probe clustering grid, as not part of any cluster
                         new_df.at[row_id, 'peak_id'] = compute_peak_number(rt, irm)
 
                 else:
@@ -5791,10 +5792,6 @@ class PredictionModel(object):
             # 1.0.1  due to deprecation
             matching_matrices[pdm] = matrix.loc[:, matrix.columns.intersection(feature_names)].reindex(
                 columns=feature_names).fillna(0)
-            # from IPython import embed;
-            # from celery.contrib import rdb;
-            # rdb.set_trace()
-            # embed()
 
         return matching_matrices
 
