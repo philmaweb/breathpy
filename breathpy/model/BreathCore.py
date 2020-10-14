@@ -106,12 +106,12 @@ def get_breath_analysis_dir():
 
 def construct_default_parameters(file_prefix, folder_name, make_plots=False, execution_dir_level='project_dir'):
     """
-    Construct default plot and file parameters. Either execute from project home directory or breathpy/model.
-        Use `execution_dir_level`='one' if executing from project home - otherwise leave as is.
+    Construct default plot and file parameters.
     :param file_prefix: what to prefix created plots and exports - eg "train_full_candy"
     :param folder_name: where data is located - eg "train_full_candy"
     :param make_plots: Are plots created - can be time consuming
-    :param execution_dir_level: Will influence where to look for data and where plots are saved
+    :param execution_dir_level: Will influence where to look for data and where plots are saved - change to 'one' if
+      a '/data' directory is not located in the same directory as the script is executed from
     :return:
     """
     dir_level = ""
@@ -121,28 +121,28 @@ def construct_default_parameters(file_prefix, folder_name, make_plots=False, exe
     colormap = colors.LinearSegmentedColormap.from_list('mcc/ims', ['white', 'blue', 'red', 'yellow'])
 
     plot_parameters = {'make_plots': make_plots, 'plot_prefix': file_prefix,
-                       'plot_dir': '{}results/plots/'.format(dir_level),
+                       'plot_dir': f'{dir_level}results/plots/',
                        'colormap': colormap,
                        }
-    results_dir = '{}results/'.format(dir_level)
-    data_dir = '{}data/'.format(dir_level)
+    results_dir = f'{dir_level}results/'
+    data_dir = f'{dir_level}data/'
     folder_path = data_dir + folder_name + "/"
-    label_filename = '{}data/{}/class_labels.csv'.format(dir_level, folder_name)
+    label_filename = f'{dir_level}data/{folder_name}/class_labels.csv'
 
     project_dir = str(Path(get_breath_analysis_dir())) + "/"
     file_parameters = {
                        'dir_level': dir_level,
                        'project_dir': project_dir,
                        'label_filename': label_filename,
-                       'visualnow_layer_filename': '{}data/{}/{}_layer.xls'.format(dir_level, folder_name, file_prefix),
+                       'visualnow_layer_filename': f'{dir_level}data/{folder_name}/{file_prefix}_layer.xls',
                        'folder_path': folder_path,
                        'folder_name': folder_name,
                        'data_dir': data_dir,
                        'results_dir': results_dir,
-                       'pickle_dir': '{}{}'.format(results_dir, "pickles/"),
-                       'plot_dir': '{}results/plots/'.format(dir_level),
+                       'pickle_dir': f'{results_dir}pickles/',
+                       'plot_dir': f'{dir_level}results/plots/',
                        'file_prefix': file_prefix,
-                       'out_dir': '{}{}{}'.format(results_dir, "data/", "{}/".format(folder_name)),
+                       'out_dir': f'{results_dir}data/{folder_name}/',
                        }
     return plot_parameters, file_parameters
 
@@ -286,13 +286,16 @@ class MccImsMeasurement(Measurement):
 
     def __init__(self, raw_filename, class_label=None, init_df=None):
         self.raw_filename = raw_filename
-        # if we pass a file from memory or from a bufer, we shouldn't fail
+        # if we pass a file from memory or from a buffer, we shouldn't fail
         # parsing from path will create a str
         # parsing from zip file will create BytesIO or StringIO
         # parsing from file will create an object with readlines
-        if (isinstance(raw_filename, (str, BytesIO, StringIO)) or hasattr(raw_filename, "readlines")) and (init_df is None):
+        if (isinstance(raw_filename, (str, BytesIO, StringIO, Path)) or hasattr(raw_filename, "readlines")) and (init_df is None):
             print(f"Parsing Measurement {raw_filename}")
             # define what axis represents what
+            # if Path - cast to string
+            if isinstance(raw_filename, Path):
+                raw_filename = str(raw_filename)
             csv_dic = self.parse_raw_ims_measurement(raw_filename)
             inverse_reduced_mobility = csv_dic['inverse_reduced_mobility']
             header = csv_dic['header']
@@ -326,8 +329,8 @@ class MccImsMeasurement(Measurement):
 
     def __str__(self):
         if self.class_label is not None:
-            return "MccImsMeasurement {0} : {1}".format(self.header['filename'], self.class_label)
-        return "MccImsMeasurement {0}".format(self.header['filename'])
+            return f"MccImsMeasurement {self.header['filename']} : {self.class_label}"
+        return f"MccImsMeasurement {self.header['filename']}"
 
 
     def __repr__(self):
@@ -341,7 +344,7 @@ class MccImsMeasurement(Measurement):
             NormalizationMethod.BASELINE_CORRECTION: self.baseline_correction_rip_compensation,
         }
         for nm in normalization_methods:
-            print("Applying Normalization {}".format(nm))
+            print(f"Applying Normalization {nm}")
             normalization_map[nm]()
 
 
@@ -488,8 +491,8 @@ class MccImsMeasurement(Measurement):
                     try:
                         header[line_attribute] = split_line[2]
                     except IndexError as ie:
-                        print(ie, "File []".format(filename), "line {}".format(i),
-                              "len(split_line) = {}".format(len(split_line)))
+                        print(ie, f"File {filename}", f"line {i}",
+                              f"len(split_line) = {len(split_line)}")
 
         return header
 
@@ -505,7 +508,7 @@ class MccImsMeasurement(Measurement):
         :return:
         """
         if len(string_lis) > 130:
-            raise ValueError("List is too big to be an IMS-header. Expected 130 lines, got %s" % len(string_lis))
+            raise ValueError(f"List is too big to be an IMS-header. Expected 130 lines, got {len(string_lis)}")
         header_line_attribute_map = MccImsMeasurement.create_ims_header_line_attribute_map()
         header = OrderedDict()
 
@@ -532,7 +535,7 @@ class MccImsMeasurement(Measurement):
                     else:
                         header[line_attribute] = ""
                 except IndexError as ie:
-                    raise IndexError(str(ie), "line {} len(split_line) = {}".format(line, len(split_line)))
+                    raise IndexError(str(ie), f"line {line} len(split_line) = {len(split_line)}")
         return header
 
         # ,data type,IMS raw data,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
@@ -711,7 +714,7 @@ class MccImsMeasurement(Measurement):
                     else:
                         raise ValueError(
                             "IMS format doesn't match expected definition of DOI 10.1007/s12127-008-0010-9."
-                            + " Expected \\ in line %d, got %s." % (i, str_line[0]))
+                            + f" Expected \\ in line {i}, got {str_line[0]}." )
                 elif i == 131:
                     # column labels case
                     if str.startswith(str_line, '1/K0'):
@@ -719,7 +722,7 @@ class MccImsMeasurement(Measurement):
                     else:
                         raise ValueError(
                             "IMS format doesn't match expected definition of DOI 10.1007/s12127-008-0010-9."
-                            + " Expected 1/K0 in line %d, got %s." % (i, str_line[:3]))
+                            + f" Expected 1/K0 in line {i}, got {str_line[:3]}.")
 
             # data case
             else:
@@ -742,7 +745,7 @@ class MccImsMeasurement(Measurement):
         rip_position = 0.0
         if header.get('rip_detection', 'disabled') == 'enabled': # disabled is default value
             rip_position = float(header['1/k0_rip'])
-        if not "{0:.3f}".format(rip_position) == "0.485":
+        if not f"{rip_position:.3f}" == "0.485":
             #  need to extract rip position from spectra if not specified in header or for shifting
             # take 99 spectra with highest retention times, here we have the lowest probability of getting VOCs in
             # get maximum value and median position
@@ -752,10 +755,10 @@ class MccImsMeasurement(Measurement):
             rip_index = int(np.median(np.argmin(intensities_arr[:, len(retention_times)-100:], axis=0)))
             rip_position = inverse_reduced_mobility[rip_index]
 
-            shift_needed = float(decimal.Decimal("{0:.3f}".format(rip_position)) - decimal.Decimal("0.485"))
+            shift_needed = float(decimal.Decimal(f"{rip_position:.3f}") - decimal.Decimal("0.485"))
             # shift all spectra to match rip position of 0.485
             if shift_needed != 0.0:
-                print("Shifting RIP by {} from {} to 0.485".format(shift_needed, rip_position))
+                print(f"Shifting RIP by {shift_needed} from {rip_position} to 0.485")
                 inverse_reduced_mobility = list(np.array(inverse_reduced_mobility, dtype=float) + shift_needed)
 
             # save new rip position in the header
@@ -945,7 +948,7 @@ class MccImsMeasurement(Measurement):
             attribute = attribute_map.get(k, "")
             val = header.get(attribute, "")
             if attribute:
-                row = "#,{},{}\n".format(attribute, val)
+                row = f"#,{attribute},{val}\n"
             else:
                 row = "#\n"
             buffer.write(row)
@@ -993,8 +996,8 @@ class MccImsMeasurement(Measurement):
 
             self.df.to_csv(outname, sep='\t', float_format='%.5f', index=True, header=True, index_label="index")
         else:
-            raise ValueError("Buffer or filename required for export. Got {}{} instead.".format(type(outname), outname))
-        print("Saving preprocessed measurement to {}".format(outname))
+            raise ValueError(f"Buffer or filename required for export. Got {type(outname)}{outname} instead.")
+        print(f"Saving preprocessed measurement to {outname}")
 
 
     @staticmethod
@@ -1010,12 +1013,7 @@ class MccImsMeasurement(Measurement):
         try:
             df.index = np.asarray(df.index, dtype=float)
             df.columns = pd.Float64Index(np.asarray(df.columns, dtype=float))
-            # t_df = df.T
-            # t_df.index = np.asarray(t_df.index, dtype=float)
-            # # t_df.index = np.arange(len(t_df.index), dtype=float)  # index is from 1 to len - usually in half seconds instead?
-            # df = t_df.T
-            # replacement_columns = pd.Float64Index(columns_copy)
-            # self.df.columns = replacement_columns
+
         except ValueError as ve:
             add_str = f" in file: {filename}"
             raise ValueError(str(ve), add_str)
@@ -1404,7 +1402,7 @@ class Analysis(object):
         if Path(self.class_label_file).exists() or '.zip' in self.class_label_file:
             label_dict = Analysis.parse_class_labels(self.class_label_file)
         else:
-            raise ValueError("Label File {} not found.".format(self.class_label_file))
+            raise ValueError(f"Class label file {self.class_label_file} not found.")
         for m in self.measurements:
             m.set_class_label(label_dict.get(m.filename, None))
         self.class_labels = self.set_class_label_dict(label_dict)
@@ -1448,7 +1446,7 @@ class Analysis(object):
             elif Path(visualnow_filename).exists() and (str.endswith(visualnow_filename, "layer.csv") or str.endswith(visualnow_filename, "layer.xls")):
                 layer_name = visualnow_filename
             else:
-                raise ValueError("Require absolute path to file names layer.csv or layer.xls or zip archive containing such file, not .".format(visualnow_filename))
+                raise ValueError(f"Require absolute path to file names layer.csv or layer.xls or zip archive containing such file, not {visualnow_filename}.")
 
 
         if visualnow_filename.endswith(".csv"):
@@ -1484,7 +1482,7 @@ class Analysis(object):
         using_own_format = all(col_name in peak_coord_df.columns for col_name in own_cols)
 
         if not using_vis_now_format or using_own_format:
-            raise InvalidLayerFileError("Not using expected columns. Either use {} or {}.".format(visualnow_cols, own_cols))
+            raise InvalidLayerFileError(f"Not using expected columns. Either use {visualnow_cols} or {own_cols}.")
 
         # rename columns to match usual pattern or own pattern
         if using_vis_now_format:
@@ -1549,10 +1547,6 @@ class Analysis(object):
                     pass
         raise ValueError(f"Couldn't find class label file in dir {dir_to_search}.")
 
-            # label_dict = MccImsAnalysis.parse_class_labels("{}/{}".format(self.upload.path, class_label_file_name))
-            # ims_filenames = [filename for filename in zip_content if str.endswith(filename, "_ims.csv")]
-            # if '.zip/' in csv_filenames[0]:
-            #     csv_filenames = [filename.split('.zip/')[1] for filename in csv_filenames]
 
     @staticmethod
     def parse_class_labels_from_ZipFile(archive, fn):
@@ -1592,8 +1586,12 @@ class Analysis(object):
     @staticmethod
     def parse_class_labels(filename):
         """
-        Read in label file from filename and return dict from filename to class_label
+        Read in label file from `filename` and return `dict` from measurement name to class_label
+        @param filename:
+        @type filename: `str`
+        @return: OrderedDict
         """
+        # TODO enable excel parsing
         # check whether file exists, if not do not set class labels
         is_zip = '.zip' in str(filename)
         if is_zip:
@@ -1604,7 +1602,7 @@ class Analysis(object):
         elif Path(filename).exists():
             class_label_name = filename
         else:
-            raise ValueError("Label File {} not found.".format(filename))
+            raise ValueError(f"Label File {filename} not found.")
 
         if filename.endswith(".csv"):
             sep = ","
@@ -1701,7 +1699,7 @@ class Analysis(object):
                 param_copy.update(v)
                 param_dict[k] = param_copy
             else:
-                print("Removed {} from parameters, as no default available".format(k))
+                print(f"Removed {k} from parameters, as no default available")
         return param_dict
 
 
@@ -1948,21 +1946,11 @@ class GCMSAnalysis(Analysis):
             rounding_precision=rounding_precision,
         )
 
-        # if use_buffer:
-        #     buffer = StringIO()
-        #     self.feature_df = feature_df
-        #     feature_df.to_csv(buffer, sep='\t', float_format='%.6f', index=True, header=True,
-        #                           index_label="index")
-        #     buffer.seek(0)
-        #     output = buffer.getvalue()
-        #     buffer.close()
-        #     # out_list.append(output)
-
         if save_to_disk:
             self.feature_df = feature_df
             result_data_dir = f"{self.dir_level}results/data/{self.dataset_name}/"
             Path(result_data_dir).mkdir(parents=True, exist_ok=True)
-            fn = "{}consensusXML_{}.csv".format(result_data_dir, peak_detection_method_name)
+            fn = f"{result_data_dir}consensusXML_{peak_detection_method_name}.csv"
             print(f"Exporting Feature Matrix to disk {fn}")
             feature_df.to_csv(fn, sep='\t', float_format='%.6f', index=True, header=True,
                                   index_label="index")
@@ -2155,7 +2143,7 @@ class MccImsAnalysis(Analysis):
         str_measurements = "\n\t"+"\n\t".join([str(m) for m in self.measurements])
         str_peak_detection_results = ""
         for peak_detection_method in self.peak_detection_results.keys():
-            str_peak_detection_results += "\n{}:\n".format(peak_detection_method)
+            str_peak_detection_results += f"\n{peak_detection_method}:\n"
             str_peak_detection_results += ", ".join([str(pdr.measurement_name).split('_ims', maxsplit=1)[0]
                                                      for pdr in self.peak_detection_results[peak_detection_method]])
         str_peak_alignment_results = ""
@@ -5589,79 +5577,6 @@ class AnalysisResult(object):
 
             intensities_by_peak_detection_method_by_class[peak_detection_method_name] = intensities_of_classes_per_peak_id
         return intensities_by_peak_detection_method_by_class
-
-
-    # @staticmethod
-    # def intensities_per_class_for_best_features_mann_whitney(best_features, measurements):
-    #     """
-    #     Extracting the intensities of the best feature for each measurement and group them by the classes. Additionally
-    #     the Mann-Whitney-U test is applied to compare the intensities of the classes
-    #
-    #     intensities_per_class_and_best_feature will contain the maximum intensities of all measurements, separated by class label
-    #     :param best_features: Best features detemined by the classifier
-    #     :param measurements: Measurements
-    #     :return:
-    #     """
-    #     x_steps, y_steps = MccImsAnalysis.compute_window_size()
-    #     intensities_best_features = dict()
-    #     mann_whitney_u = dict()
-    #     for key in best_features.keys():
-    #         intensities_best_features[key] = dict()
-    #         mann_whitney_u[key] = dict()
-    #         # for feature_number in range(best_features[key].shape[0]):
-    #         for feature_number in best_features[key].index:
-    #             intensities_of_classes = {class_label: [] for class_label in
-    #                                       np.unique([m.class_label for m in measurements])}
-    #             # Extract the window of the feature (inverse_reduced_mobility and retention_time)
-    #             # the window size is defined by our probe clustering approach, using 2 steps as width and height
-    #             index_inverse_reduced_mobility = np.argmax(x_steps[x_steps <= best_features[key].loc[feature_number, 'inverse_reduced_mobility']])
-    #             inverse_reduced_mobility_window = x_steps[index_inverse_reduced_mobility: index_inverse_reduced_mobility + 2]
-    #             index_retention_time = np.argmax(y_steps[y_steps <= best_features[key].loc[feature_number, 'retention_time']])
-    #             retention_time_window = y_steps[index_retention_time: index_retention_time + 2]
-    #             # check if the inverse reduced mobility is not the upper limit
-    #             for measurement in measurements:
-    #                 if len(inverse_reduced_mobility_window) == 2:
-    #                     intensities_in_window = measurement.df[(measurement.df.index >= inverse_reduced_mobility_window[0]) & (measurement.df.index <= inverse_reduced_mobility_window[1])].T
-    #                     # string comparison problem, we have strings in our imported dataframe index! - we have to cast it to float
-    #                     if len(retention_time_window) == 2: #  check if the retention time is not the upper limt
-    #                         intensities_in_window = intensities_in_window[
-    #                             (np.asarray(intensities_in_window.index, dtype=float) >= retention_time_window[0]) &
-    #                             (np.asarray(intensities_in_window.index, dtype=float) <= retention_time_window[1])].T
-    #                     #  if the retention time is the upper limit
-    #                     else:
-    #                         intensities_in_window = intensities_in_window[
-    #                             (np.asarray(intensities_in_window.index, dtype=float) >= retention_time_window[0])].T
-    #                     max_intensity = np.max(intensities_in_window.max())
-    #                     intensities_of_classes[measurement.class_label].append(max_intensity)
-    #                 else: # if the inverse reduced mobility is the upper limit --> no second value to define the window is available
-    #                     intensities_in_window = measurement.df[(measurement.df.index >= inverse_reduced_mobility_window[0])].T
-    #                     if len(retention_time_window) == 2: # if the retention time is not the upper limit
-    #                         intensities_in_window = intensities_in_window[
-    #                             (np.asarray(intensities_in_window.index, dtype=float) >= retention_time_window[0]) &
-    #                             (np.asarray(intensities_in_window.index, dtype=float) <= retention_time_window[1])].T
-    #                     else: # if the retention time is the upper limit
-    #                         intensities_in_window = intensities_in_window[
-    #                             (np.asarray(intensities_in_window.index, dtype=float) >= retention_time_window[0])].T
-    #                     max_intensity = np.max(intensities_in_window.max())
-    #                     intensities_of_classes[measurement.class_label].append(max_intensity)
-    #
-    #             # get the keys of the dictionary intensities of classes as a list
-    #             list_of_classes = [*intensities_of_classes]
-    #             mann_whitney_u_of_best_feature = dict()
-    #             # what are these while loops for?
-    #             # n = 0
-    #             for n in range(len(list_of_classes)):#while n < len(list_of_classes) - 1:
-    #                 x = 1
-    #                 while n+x <= len(list_of_classes) - 1:
-    #                     comparison = "{}_{}".format(list_of_classes[n], list_of_classes[n+x])
-    #                     # apply the mann whitney u test to all possible pairwise combinations of the classes --> threshold and p-value
-    #                     mann_whitney_u_of_best_feature[comparison] = mannwhitneyu(
-    #                         intensities_of_classes[list_of_classes[n]], intensities_of_classes[list_of_classes[n+x]])
-    #                     x += 1
-    #                 # n += 1
-    #             mann_whitney_u[key][best_features[key].loc[feature_number, 'peak_id']] = mann_whitney_u_of_best_feature
-    #             intensities_best_features[key][best_features[key].loc[feature_number, 'peak_id']] = intensities_of_classes
-    #     return intensities_best_features, mann_whitney_u
 
 
     def create_decision_trees(self, **kwargs):

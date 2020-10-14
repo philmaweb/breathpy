@@ -27,12 +27,10 @@ def generate_full_candy_classes(plot_params, file_params, preprocessing_steps, e
                               performance_measure_parameters=evaluation_params_dict,
                               class_label_file=file_params['label_filename'], dataset_name='full_candy', dir_level="")
 
-    # analysis.preprocess()
-
     for m in analysis.measurements:
         class_label = class_labels.get(m.filename)
         m.set_class_label(class_label)
-        # HeatmapPlot.FastIntensityMatrix(m,plot_params,title=class_label)
+
     from sklearn.model_selection import train_test_split
     from shutil import copy as file_copy
     from shutil import rmtree
@@ -284,7 +282,7 @@ def split_labels_ratio(class_label_dict, train_val_fraction, seed=42):
     return train_df, test_df
 
 
-def write_raw_files_to_zip(raw_filenames, class_label_dict, origin_zip_fn):
+def write_raw_files_to_zip(raw_filenames, class_label_dict, origin_zip_fn, class_label_fn="class_labels.csv"):
     """
     Write passed `raw_filenames`, `class_label_dict` from `origin_zip_fn` to `target_zip` archive
     returns: buffer
@@ -298,7 +296,7 @@ def write_raw_files_to_zip(raw_filenames, class_label_dict, origin_zip_fn):
     # write to target zip
     buffer = BytesIO()
     with ZipFile(buffer, 'w', ZIP_DEFLATED) as target_zip:
-        target_zip.writestr("class_labels.csv", class_label_buffer.getvalue())
+        target_zip.writestr(class_label_fn, class_label_buffer.getvalue())
 
         # write from origin_zip
         with ZipFile(origin_zip_fn, 'r') as origin_zip:

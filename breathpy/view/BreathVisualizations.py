@@ -18,11 +18,11 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 import seaborn as sns
-from scipy import interp
+from numpy import interp
 from skimage.transform import resize
 from skimage import color as skcolor
 from sklearn.metrics import auc
-
+import datetime
 
 from ..model.BreathCore import PeakAlignmentMethod, MccImsAnalysis, MccImsMeasurement
 from ..model.BreathCore import deprecated
@@ -1463,7 +1463,172 @@ class TreePlot(object):
     DecisionTrees = _plot_decision_trees_from_analysis_result
 
 
+class TimeSeriesPlot(object):
+    """
+    Create line-plot of most informative / selected features
+    """
 
+    @staticmethod
+    def _time_series_plot(mcc_ims_analysis, plot_parameters):
+        """
+        Select top features from analysis result, ensure measurements are sorted and pass to helper to plot
+        @param plot_parameters:
+        @param plot_parameters:
+        @return:
+        """
+        # TODO check if has a analysis_result - otherwise throw error as need a feature matrix
+        # FIXME implement me
+
+        if not (hasattr(mcc_ims_analysis, 'analysis_result') and hasattr(mcc_ims_analysis.analysis_result, 'trainings_matrix')):
+            raise ValueError("No analysis result / feature matrix present. Needed for plot.")
+
+        best_features_df = mcc_ims_analysis.analysis_result.best_features_df
+
+        # buffers and filenames for external saving - if plot_parameters['use_buffer']
+        all_buffers = []
+        all_fns = []
+        # get feature_matrix from analysis
+        for pdmn, fm in mcc_ims_analysis.analysis_result.trainings_matrix.items():
+            # sorted_by Gini decrease / pvalue - already limited to top 10 on default
+            for performance_measure_name in best_features_df['performance_measure_name'].unique():
+                current_maks = np.logical_and(best_features_df['peak_detection_method_name'] == pdmn,
+                                              best_features_df['performance_measure_name'] == performance_measure_name)
+                current_top_features = best_features_df[current_maks]['peak_id'].unique()
+                title_prefix = pdmn
+                y_max = fm.loc[fm.index, current_top_features].max().max()
+                current_buffers, current_fns = TimeSeriesPlot.TimeSeriesFromMatrix(
+                    feature_matrix=fm, time_sorted_measurement_names=sorted(fm.index.values),
+                    feature_names=current_top_features,
+                    class_label_dict=mcc_ims_analysis.analysis_result.class_label_dict,
+                    plot_parameters=plot_parameters, title_prefix=title_prefix,
+                    y_max_limit=y_max
+                )
+                all_buffers.extend(current_buffers)
+                all_fns.extend(current_fns)
+        return all_buffers, all_fns
+
+
+    @staticmethod
+    def _time_series_plot_helper(feature_matrix, time_sorted_measurement_names, feature_names, class_label_dict, plot_parameters, y_max_limit=None, use_date=True, title_prefix=""):
+        """
+        Extract feature intensities using measurement names and feature names - then do a separate line plot for each feature
+        @param feature_matrix: pandas dataframe measurement_names as index and feature_names in columns
+        @param time_sorted_measurement_names: names matching the feature_matrix index
+        @param feature_names: feature names matching the feature_matrix column identifiers
+        @param class_label_dict: `dict()` mapping measurement names to class labels
+        @param plot_parameters:
+        @param y_max_limit: y-axis upper limit - to enable direct comparison of curves if wanted - None if disabled
+        @return:
+        """
+        wanted_subset = feature_matrix.loc[time_sorted_measurement_names, feature_names]
+        full_feature_matrix, single_matrices = TimeSeriesPlot._prep_feature_matrix(
+                feature_matrix=wanted_subset, measurement_names=time_sorted_measurement_names,
+                class_label_dict=class_label_dict, use_date=use_date)
+
+        # now plot it
+        # do one plot putting all lines looks super crowded do a line plot for each feature - splitting for each class
+
+        # ax = sns.lineplot(data=full_feature_matrix, x="time", y="intensity", hue="feature", style="label", markers=True)
+        # n_features = len(feature_names)
+        figure_dir = Path(plot_parameters['plot_dir'])/"time_series"
+        prefix = plot_parameters.get('plot_prefix', '')
+
+        # figure_name = f"{prefix}_top{n_features}_full_time_series.png"
+        # title = f"Timeseries of {prefix} top{n_features} features"
+        # feature_name = f"Top{n_features}"
+
+        fns = []
+        return_buffers = []
+        return_features = []
+
+        def prep_save_visuals(ax, title, figure_name, feature_name):
+            ax.set_title(title)
+            plt.xticks(rotation=40)
+            plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+
+            if not plot_parameters.get('use_buffer', False):
+                Path(figure_dir).mkdir(parents=True, exist_ok=True)
+                print(f"Saving figure to {figure_dir/figure_name}")
+                ax.figure.savefig(figure_dir/figure_name, dpi=300, bbox_inches='tight', format="png")
+            buff = save_plot_to_buffer(plot_parameters, ax.figure)
+
+            fns.append(figure_name)
+            return_buffers.append(buff)
+            return_features.append(feature_name)
+            plt.close(ax.figure)
+
+        # dont put all in one
+        # prep_save_visuals(ax, title, figure_name, feature_name)
+
+        for single_matrix in single_matrices:
+            ax = sns.lineplot(data=single_matrix, x="time", y="intensity", hue="label", style="feature")
+            #  pass y_max_limit to lineplot
+            ax.set_ylim(0, y_max_limit)
+            current_feature = single_matrix['feature'][0]
+            figure_name = f"{prefix}_{current_feature}_time_series.png"
+            title = f"Timeseries of {prefix} \n{title_prefix} {current_feature}"
+
+            prep_save_visuals(ax, title, figure_name, current_feature)
+
+        return return_buffers, fns
+
+
+    @staticmethod
+    def _prep_feature_matrix(feature_matrix, measurement_names, class_label_dict, use_date):
+        """
+        format measurement names - if following mcc-ims regular parctice
+          XXXX_YYMMDDMMSS_ims.csv
+        @param feature_matrix:
+        @param measurement_names:
+        @return:
+        """
+        name_dict = dict()
+
+        def extract_mcc_ims_name_to_date(name):
+            stem = Path(name).stem
+            date_id = stem.split("_")[1]
+            try:
+                y = int("20" + date_id[:2])
+                m = int(date_id[2:4])
+                d = int(date_id[4:6])
+                h = int(date_id[6:8])
+                minute = int(date_id[8:10])
+                dt = datetime.datetime(y,m,d,h,minute)
+            except ValueError:
+                return False
+            return dt
+
+        if extract_mcc_ims_name_to_date(measurement_names[0]) and use_date:
+            for measurement_name in measurement_names:
+                name_dict[measurement_name] = extract_mcc_ims_name_to_date(measurement_name)
+        else:
+            for measurement_name in measurement_names:
+                name_dict[measurement_name] = Path(measurement_name).stem
+
+        # inv_name_dict = {v: k for k, v in name_dict.items()}
+        # add class label
+        labels = [class_label_dict[mn] for mn in measurement_names]
+
+        # use mapping to remap measurement names
+        new_index = [name_dict[mn] for mn in measurement_names]
+        feature_matrix.index = new_index
+        feature_matrix['label'] = labels
+
+        # now "melt" dataframe to fit lineplot requirements - x and y
+        # sns.lineplot(data=single_matrix, x="time", y="intensity", hue="label", style="feature")
+        single_matrices = []
+        for col in feature_matrix.columns[:-1]:  # label is the last column - can't iterate over it
+            selection = feature_matrix.loc[feature_matrix.index, [col, 'label']]
+            selection['feature'] = col
+            selection['time'] = selection.index.values
+            selection.rename(columns={col: 'intensity'}, inplace=True)
+            single_matrices.append(selection)
+
+        full_feature_matrix = pd.concat(single_matrices)
+        return full_feature_matrix, single_matrices
+
+    TimeSeriesFromAnalysis = _time_series_plot
+    TimeSeriesFromMatrix = _time_series_plot_helper
 
 
 def save_plot_to_buffer(plot_parameters, fig, dpi=200):

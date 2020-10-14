@@ -59,7 +59,7 @@ def test_start_to_end_pipeline(plot_params, file_params, preprocessing_steps, ev
     in_file_names = file_limit_stratify_selection_by_label(in_file_names, label_dict, labels_to_keep=specific_classes, file_limit=number_of_files_limit)
 
     # also limit class labels to used files - otherwise feature reduction will fail check
-    if number_of_files_limit !=-1:
+    if number_of_files_limit != -1:
         new_class_label_dict = dict()
         for fn in in_file_names:
             new_class_label_dict[fn] = label_dict[fn]
@@ -72,11 +72,9 @@ def test_start_to_end_pipeline(plot_params, file_params, preprocessing_steps, ev
 
     # check if already peaxed, if yes, then read in peaxed files
     outfile_names = [file_params['out_dir'] + fn[:-4] + "_out.csv" for fn in in_file_names]
-    # are_all_files_already_peaxed = all([Path(on).exists() for on in outfile_names])
 
-    print("Extracting CSV files {}".format(in_file_names))
+    print(f"Extracting CSV files {in_file_names}")
     # Use parse raw measurement instead of extracting from zip everytime
-    # my_csv_df = extract_csvs_from_zip(raw_zip_archive, verbose=True)
     my_ims_measurements = [MccImsMeasurement(f"{file_params['folder_path']}{i_fn}") for i_fn in in_file_names]
 
     # my_ims_measurements = [MccImsMeasurement(i_fn) for i_fn in full_path_to_in_files]
