@@ -282,8 +282,6 @@ class MccImsMeasurement(Measurement):
     A MccImsMeasurement
     """
 
-    # measurement_names = []
-
     def __init__(self, raw_filename, class_label=None, init_df=None):
         self.raw_filename = raw_filename
         # if we pass a file from memory or from a buffer, we shouldn't fail
@@ -976,20 +974,19 @@ class MccImsMeasurement(Measurement):
             return output
 
         if outname is None:
+            new_name = f"{Path(self.raw_filename).stem}{file_suffix}.csv"
             if directory:
-                outname = f"{directory}{self.raw_filename.rsplit('/', maxsplit=1)[1][:-4]}{file_suffix}.csv"
+                outname = Path(directory)/new_name
             else:
-                outname = f"{self.raw_filename[:-4]}{file_suffix}.csv"
+                outname = new_name
 
             # another old mcc-ims ~2006 problem - the index might not be unique - but a duplicate
             # in the last element occurs
             if any(self.df.columns.duplicated()):
                 if self.df.columns.duplicated()[-1]:
                     print(f"{self.filename}: duplicate column - replacing last column name")
-                    # replacement = {}
-                    # replacement[self.df.columns[-1]] = self.df.columns[-1] +1
                     columns_copy = self.df.columns.copy().values
-                    columns_copy[-1] +=1
+                    columns_copy[-1] += 1
                     # it's a Float64Index
                     replacement_columns = pd.Float64Index(columns_copy)
                     self.df.columns = replacement_columns
@@ -1147,9 +1144,7 @@ class BitPeakAlignmentResult(PeakAlignmentResult):
         peak_values = dict()
         peak_coordinates = dict()
         peak_coordinates_dict = dict()
-        peak_descriptions = pd.DataFrame([m.get_description() for m in measurements])
-        # quickfix works quite well
-        # measurement_names = list(dict_from_measurement_to_int.keys())
+        # peak_descriptions = pd.DataFrame([m.get_description() for m in measurements])
         measurement_names = sorted(dict_from_measurement_to_int)
 
 
@@ -1435,24 +1430,24 @@ class Analysis(object):
             zip_split = visualnow_filename.split('.zip/')
             layer_name = zipfile.ZipFile(memory_file).open(zip_split[1],'r')
         else:
-            is_zip = '.zip' in visualnow_filename
+            is_zip = '.zip' in str(visualnow_filename)
             if is_zip:
-                zip_split = visualnow_filename.split('.zip/')
+                zip_split = str(visualnow_filename).split('.zip/')
                 if len(zip_split) == 2:
                     archive_name = zip_split[0] + '.zip'
                     layer_name = zipfile.ZipFile(archive_name).open(zip_split[1], 'r')
                 else:
                     return None
-            elif Path(visualnow_filename).exists() and (str.endswith(visualnow_filename, "layer.csv") or str.endswith(visualnow_filename, "layer.xls")):
+            elif Path(visualnow_filename).exists() and (str(visualnow_filename).endswith("layer.csv") or str(visualnow_filename).endswith("layer.xls")):
                 layer_name = visualnow_filename
             else:
                 raise ValueError(f"Require absolute path to file names layer.csv or layer.xls or zip archive containing such file, not {visualnow_filename}.")
 
 
-        if visualnow_filename.endswith(".csv"):
+        if str(visualnow_filename).endswith(".csv"):
             # read in the layer from a csv file
             peak_coord_df = pd.read_csv(layer_name, header=3)
-        elif visualnow_filename.endswith(".xls"):
+        elif str(visualnow_filename).endswith(".xls"):
             # read in the layer from an excel file - need to buffer extra with new pandas version
 
             # extra check - in webplatform need extra buffer - in local version we let pandas do the reading
@@ -2077,16 +2072,19 @@ class MccImsAnalysis(Analysis):
     """
 
 
-    def __init__(self, measurements, preprocessing_steps, outfile_names, dataset_name, dir_level, preprocessing_parameters={}, performance_measure_parameters={}, class_label_file="", visualnow_layer_file="", peax_binary_path=""):
+    def __init__(self, measurements, preprocessing_steps, outfile_names=[], dataset_name="", dir_level="",
+                 preprocessing_parameters={}, performance_measure_parameters={}, class_label_file="",
+                 visualnow_layer_file="", peax_binary_path=""):
+
         """
         :type measurements:  list(MccImsMeasurement)
         :param measurements: Measurements to be processed
         :type preprocessing_steps: list(MccImsPreprocessingMethod)
         :param preprocessing_steps: list of preprocessing steps applied to all measurements
         :type outfile_names: list(str)
-        :param outfile_names: List of filenames used to save the peak_calling output to
+        :param outfile_names: List of filenames used to save the peak_calling output to - optional
         :type class_label_file: str
-        :param class_label_file: Tab separated file holding the measurement names and associated class label
+        :param class_label_file: Tab / comma separated file holding the measurement names and associated class label
         :type visualnow_layer_file: str
         :param visualnow_layer_file: Excel table holding the peaks detected in VisualNow
         :type dataset_name: str
@@ -2094,6 +2092,12 @@ class MccImsAnalysis(Analysis):
         :type dir_level: str
         :param dir_level: "" or "../" used to distinguish between different directory levels, depending on where the
                 initial analysis script is called from.
+        :type preprocessing_parameters: dict()
+        :param preprocessing_parameters: overwrite default parameters for preprocessing methods - e.g. {DenoisingMethod.MEDIAN_FILTER: {'kernel_size': 11},...}
+        :type performance_measure_parameters: dict()
+        :param performance_measure_parameters: overwrite default parameters for performance_measures - e.g. {PerformanceMeasure.RANDOM_FOREST_CLASSIFICATION: { 'n_of_features': 20},...}
+        :type peax_binary_path: Path()
+        :param peax_binary_path: path to the peax binary
         """
         # try casting them into preprocessing options
         preprocessing_dict = MccImsAnalysis.match_processing_options(preprocessing_steps)
@@ -2611,8 +2615,8 @@ class MccImsAnalysis(Analysis):
         peax_binary_path = self.peax_binary_path
         infilenames = [m.raw_filename for m in self.measurements]
 
-        tmp_dir = os.path.join(tempfile.gettempdir(), '.breath/peax_raw/{}'.format(hash(os.times())))
-        have_created_temp_dir = any([".zip/" in fn for fn in infilenames])
+        tmp_dir = Path(tempfile.gettempdir())/f'.breath/peax_raw/{hash(os.times())}'
+        have_created_temp_dir = any([".zip/" in str(fn) for fn in infilenames])
 
         if have_created_temp_dir:
             infilenames = []
@@ -2622,7 +2626,7 @@ class MccImsAnalysis(Analysis):
             # infile is a problem - peax cannot read from zip and they are not properly processed at prediction level
             # export in raw format to tmpdir
             for m in self.measurements:
-                export_fn = m.raw_filename.rsplit(".zip/", maxsplit=1)[1]
+                export_fn = str(m.raw_filename).rsplit(".zip/", maxsplit=1)[1]
                 export_path = tmp_dir + export_fn
                 m.export_raw(export_path)
                 infilenames.append(export_path)
@@ -3007,7 +3011,7 @@ class MccImsAnalysis(Analysis):
         return peak_df
 
 
-    def align_peaks(self, file_prefix, alignment_result_type=FloatPeakAlignmentResult, **kwargs):
+    def align_peaks(self, alignment_result_type=FloatPeakAlignmentResult, **kwargs):
         """
         Align Peaks between measurements with clustering methods
         documentation for scikit-learn clustering methods: http://scikit-learn.org/stable/modules/clustering.html
@@ -3024,7 +3028,7 @@ class MccImsAnalysis(Analysis):
             PeakAlignmentMethod.AFFINITY_PROPAGATION_CLUSTERING: self._align_peaks_affinity_propagation,
             PeakAlignmentMethod.MEAN_SHIFT_CLUSTERING: self._align_peaks_mean_shift
         }
-        print("Applying Peak Alignment {}".format(self.peak_alignment_step))
+        print(f"Applying Peak Alignment {self.peak_alignment_step}")
 
         self.peak_alignment_result = peak_alignment_map[self.peak_alignment_step](
             alignment_result_type=alignment_result_type,
@@ -3032,10 +3036,10 @@ class MccImsAnalysis(Analysis):
             **self.preprocessing_parameter_dict.get(self.peak_alignment_step, {}))
 
         # is called after all peak detection and alignments are finished
-        if len(self.peak_alignment_result.dict_of_df.keys()) >= 2 and len(self.peak_alignment_result.dict_of_df.keys()) < 5:
-            self.overlap()
-            # implement optimized overlap function, when necessary
-            # self.new_overlap(self.peak_alignment_result.dict_of_df)
+        # if len(self.peak_alignment_result.dict_of_df.keys()) >= 2 and len(self.peak_alignment_result.dict_of_df.keys()) < 5:
+        #     self.overlap()
+        #     # implement optimized overlap function, when necessary
+        #     # self.new_overlap(self.peak_alignment_result.dict_of_df)
 
 
     def overlap(self):
@@ -4007,6 +4011,14 @@ class MccImsAnalysis(Analysis):
         for peak_detection, peak_detection_result_lis in self.peak_detection_results.items():
             for pdr in peak_detection_result_lis: pdr.export_as_csv(directory)
 
+        # export feature matrices - if they exist
+        if self.analysis_result is not None:
+            for pdm_name, trainings_matrix in self.analysis_result.trainings_matrix.items():
+                fm_fn = f"{pdm_name}_feature_matrix.csv"
+                trainings_matrix.to_csv(Path(directory)/fm_fn, index=True, header=True, index_label="index")
+                print(f"Saving feature matrix {fm_fn} to {Path(directory)/fm_fn}")
+
+
 
     def import_results_from_csv_list(self, list_of_files, peak_detection_step, based_on_measurement=None):
         """
@@ -4340,7 +4352,7 @@ class PeakDetectionResult(object):
         else:
             outname = self.measurement_name
 
-        filename = "{}{}_{}{}.csv".format(directory, outname, peak_detection_method.name, PeakDetectionResult.peak_detection_result_suffix)
+        filename = f"{directory}{outname}_{peak_detection_method.name}{PeakDetectionResult.peak_detection_result_suffix}.csv"
         columns = ['measurement_name',
                    'peak_id',
                    'retention_time',
@@ -4685,7 +4697,7 @@ class AnalysisResult(object):
             class_counts = Counter(class_labels)
             min_occurence = min(class_counts.values())
 
-        can_cross_validate = min_occurence >= 10
+        can_cross_validate = min_occurence >= n_splits_cross_validation
         n_splits_cross_validation = min(n_splits_cross_validation, min_occurence)
 
         for pdm in self.peak_detection_steps:
@@ -4702,7 +4714,7 @@ class AnalysisResult(object):
                     performance_measure.name][pdm.name] = {
                     'error':
                         'CrossValidationError. \n Need more measurements to make splits for cross validation.\n' +
-                        'Smalles class has only {} occurences.'.format(min_occurence)}
+                        f'Smalles class has only {min_occurence} occurences, require at least {n_splits_cross_validation}.'}
 
             # save RandomForest Model pickle in dict
             self.model_by_pdm[pdm] = AnalysisResult.train_random_forest_classifier(
@@ -4911,9 +4923,6 @@ class AnalysisResult(object):
             model.fit(trainings_matrix, trainings_labels.ravel())
         else:
             model.fit(trainings_matrix, trainings_labels)
-        # from sklearn.utils.validation import check_is_fitted
-        # check_is_fitted(model, "estimator_")
-        # model.predict_proba(trainings_matrix)
         return model
 
 
@@ -5270,7 +5279,7 @@ class AnalysisResult(object):
                 pvals_current_class = corrected_pvals_df[
                         np.logical_and(corrected_pvals_df['peak_detection_method_name'] == peak_detection_name,
                                        corrected_pvals_df['class_comparison'] == comparison_str)]
-                pvals_current_class['1-corrected_p_values'] = 1 - pvals_current_class['corrected_p_values']
+                pvals_current_class['1-corrected_p_values'] = 1 - pvals_current_class.loc[:, 'corrected_p_values']
                 gini_df = pd.DataFrame({'gini_decrease': feature_importances[0], 'peak_id': trainings_matrix.columns.values, })
 
                 merged = pd.merge(pvals_current_class, gini_df, on='peak_id')
@@ -5287,14 +5296,6 @@ class AnalysisResult(object):
                      'radius_retention_time']]
 
                 statistics_best_features[comparison_str] = best_df
-            # for class_label, feature_importance in zip(class_labels, feature_importances):
-            #     # sliced_by_importance = sorted_by_importance[:n_of_reported_peaks]
-            #     # best_feature_index = trainings_matrix.columns[sliced_by_importance]
-            #     gini_df = pd.DataFrame({'gini_decrease': feature_importances[0], 'peak_id': trainings_matrix.columns.values})
-            #     sliced_sorted_merged = gini_df.sort_values(by='gini_decrease', ascending=False, )[:n_of_reported_peaks]
-            #     statistics_best_features[class_label] = sliced_sorted_merged
-
-        # --> combine the dataframes into a single dataframe after return
 
         header_str = "#This file contains statistical results from evaluating the dataset {}:\n".format(dataset_name)
         intro_str = \

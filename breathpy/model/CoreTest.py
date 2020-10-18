@@ -28,9 +28,9 @@ from .BreathCore import (MccImsMeasurement,
                               get_breath_analysis_dir,
                               )
 from ..view.BreathVisualizations import HeatmapPlot, ClusterPlot, MaskPlot, RocCurvePlot, VennDiagram, BoxPlot, TreePlot
-from ..tools.tools import file_limit_stratify_selection_by_label
+from ..tools.tools import file_limit_stratify_selection_by_label, get_peax_binary_path
 
-def test_start_to_end_pipeline(plot_params, file_params, preprocessing_steps, evaluation_params_dict, number_of_files_limit=-1, specific_classes=[], stop_after_alignment=False):
+def run_start_to_end_pipeline(plot_params, file_params, preprocessing_steps, evaluation_params_dict, number_of_files_limit=-1, specific_classes=[], stop_after_alignment=False):
     """
     Run pipeline with raw MCC/IMS measurements
     :param plot_params:
@@ -73,15 +73,14 @@ def test_start_to_end_pipeline(plot_params, file_params, preprocessing_steps, ev
     # check if already peaxed, if yes, then read in peaxed files
     outfile_names = [file_params['out_dir'] + fn[:-4] + "_out.csv" for fn in in_file_names]
 
-    print(f"Extracting CSV files {in_file_names}")
-    # Use parse raw measurement instead of extracting from zip everytime
+    print(f"Parsing CSV files {in_file_names}")
+    # Parse raw measurements
     my_ims_measurements = [MccImsMeasurement(f"{file_params['folder_path']}{i_fn}") for i_fn in in_file_names]
 
-    # my_ims_measurements = [MccImsMeasurement(i_fn) for i_fn in full_path_to_in_files]
     print("Finished Extracting CSV files.\n")
     print(my_ims_measurements)
 
-    peax_binary_path = f"{get_breath_analysis_dir()}/bin/peax1.0-LinuxX64/peax"
+    peax_binary_path = get_peax_binary_path()
     ims_analysis = MccImsAnalysis(my_ims_measurements, preprocessing_steps, outfile_names,
                                   performance_measure_parameters=evaluation_params_dict,
                                   class_label_file=label_dict_path,
@@ -91,18 +90,8 @@ def test_start_to_end_pipeline(plot_params, file_params, preprocessing_steps, ev
                                   peax_binary_path=peax_binary_path
                                    )
 
-    if number_of_files_limit != -1:
-        # also set the class label dict accordingly
-        ims_analysis.set_class_label_dict(label_dict)
-
-
-    # plot_raw_and_processed(ims_analysis, plot_parameters)
+    # default number of threads used is 4
     ims_analysis.preprocess_multicore()
-
-    # if plot_params['make_plots']:
-    #     for m in ims_analysis.measurements:
-    #         HeatmapPlot.FastIntensityMatrix(m, plot_parameters)
-
 
     # Make Average classwise Plot
     # HeatmapPlot.ClasswiseHeatmaps(ims_analysis, plot_parameters)
@@ -125,11 +114,7 @@ def test_start_to_end_pipeline(plot_params, file_params, preprocessing_steps, ev
         else:
             pass
 
-        # orig_prefix = plot_params['plot_prefix']
-        # ClusterPlot.OverlayClasswiseAlignment(ims_analysis, plot_parameters=plot_params)
-        # plot_params['plot_prefix'] = orig_prefix + "_slow"
         # ClusterPlot.OverlayAlignment(ims_analysis, plot_parameters=plot_params)
-        # plot_params['plot_prefix'] = orig_prefix
     if stop_after_alignment:
         return ims_analysis
 
@@ -152,7 +137,7 @@ def test_start_to_end_pipeline(plot_params, file_params, preprocessing_steps, ev
         TreePlot.DecisionTrees(ims_analysis.analysis_result, plot_parameters=plot_params)
 
     # continue with prediction and preprocessing of test set
-    tmp = os.path.join(tempfile.gettempdir(), f'.breath/{hash(os.times())}')
+    tmp = Path(tempfile.gettempdir())/f'.breath/{hash(os.times())}'
     os.makedirs(tmp)
 
     dataset_name = file_params['folder_path'].split("/")[-1]
@@ -204,13 +189,13 @@ def test_start_to_end_pipeline(plot_params, file_params, preprocessing_steps, ev
             else:
                 false[fn] = predicted_label
 
-        print("resulting_labels for {} are: {}".format(pdm.name, predicted_labels))
-        print("Falsely classified: {}".format(false))
-        print("That's {} correct vs {} false".format(len(correct.keys()), len(false.keys())))
+        print(f"resulting_labels for {pdm.name} are: {predicted_labels}")
+        print(f"Falsely classified: {false}")
+        print(f"That's {len(correct.keys())} correct vs {len(false.keys())} false")
     return ims_analysis
 
 
-def test_resume_analysis(plot_params, file_params, preprocessing_steps, evaluation_params_dict, preprocessing_params_dict={},number_of_files_limit=-1, specific_classes=(), stop_after_alignment=False):
+def run_resume_analysis(plot_params, file_params, preprocessing_steps, evaluation_params_dict, preprocessing_params_dict={}, number_of_files_limit=-1, specific_classes=(), stop_after_alignment=False):
     """
     Run pipeline with preprocessed / peak detection results from MCC/IMS measurements
     :param plot_params:
@@ -230,7 +215,7 @@ def test_resume_analysis(plot_params, file_params, preprocessing_steps, evaluati
 
     # test for visualnow layer import
     # visual_now_file_path = "/home/philipp/dev/breathpy/data/train_full_candy/train_full_candy_layer.xls"
-    peax_binary_path = "{0}bin/peax1.0-LinuxX64/peax".format(file_params['dir_level'])
+    peax_binary_path = get_peax_binary_path()
 
     label_dict_path = MccImsAnalysis.guess_class_label_extension(file_params['folder_path'])
     label_dict = MccImsAnalysis.parse_class_labels(label_dict_path)
@@ -371,8 +356,8 @@ def run_default(set_name, make_plots=False, limit_to_pdm=[]):
         preprocessing_steps = filtered
 
 
-    test_start_to_end_pipeline(plot_parameters, file_parameters, preprocessing_steps, evaluation_params_dict,
-                               number_of_files_limit=0)
+    run_start_to_end_pipeline(plot_parameters, file_parameters, preprocessing_steps, evaluation_params_dict,
+                              number_of_files_limit=0)
     return file_parameters, preprocessing_steps
 
 if __name__ == '__main__':
@@ -386,6 +371,6 @@ if __name__ == '__main__':
     plot_parameters, file_parameters = construct_default_parameters(file_prefix, folder_name, make_plots=True, execution_dir_level='one')
     preprocessing_steps, evaluation_params_dict = construct_default_processing_evaluation_steps()
 
-    # test_start_to_end_pipeline(plot_parameters, file_parameters, preprocessing_steps, evaluation_params_dict, stop_after_alignment=True)
-    test_start_to_end_pipeline(plot_parameters, file_parameters, preprocessing_steps, evaluation_params_dict)
-    # test_resume_analysis(plot_parameters, file_parameters, preprocessing_steps, evaluation_params_dict)
+    # run_start_to_end_pipeline(plot_parameters, file_parameters, preprocessing_steps, evaluation_params_dict, stop_after_alignment=True)
+    run_start_to_end_pipeline(plot_parameters, file_parameters, preprocessing_steps, evaluation_params_dict)
+    # run_resume_analysis(plot_parameters, file_parameters, preprocessing_steps, evaluation_params_dict)
