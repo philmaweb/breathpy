@@ -59,53 +59,33 @@ class HeatmapPlot(object):
 
 
     @staticmethod
-    def plot_heatmap_helper_fast(mcc_ims_measurement, plot_parameters, title="", title_prefix="Measurement ",
-                                 plot_dir_suffix="heatmaps", plot_type="intentsity_plot"):
+    def plot_heatmap_helper_fast(mcc_ims_measurement, plot_parameters, title="", title_prefix="Measurement ", plot_type="intentsity_plot", plot_dir_suffix="heatmaps"):
         intensity_matrix = mcc_ims_measurement.df
         measurement_name = mcc_ims_measurement.filename
-        # fig = plt.figure()
-        # ax = fig.add_subplot(111)
-        # # faster conversion
-        # image = skcolor.rgb2gray(intensity_matrix.T.values)
-        # # image.shape
-        # x_size, y_size = 2500, 2500
-        # image_resized = resize(image, (x_size, y_size), mode='reflect')
-        # plt.imshow(image_resized, cmap=plot_parameters['colormap'], vmin=0, vmax=1)
-        # ax.invert_yaxis()
-        # plt.colorbar()
-        #
-        # # to plot we need to use the indices of the intensity matrix - not the actual values
-        # irm_vals = np.asarray(intensity_matrix.index.values, dtype=float)
-        # rt_vals = np.asarray(intensity_matrix.T.index.values, dtype=float)
-        # # need to re-adjust the stepwidth - as we resized the image
-        # ClusterPlot.setup_axes_for_fast_intensity_matrix(ax, irm_vals=irm_vals, rt_vals=rt_vals, x_size=x_size, y_size=y_size)
-        # fig.set_figsize = (9, 4)
-        #
+
         fig, ax = HeatmapPlot.prepare_fast_heatmap_plot(intensity_matrix, {"cmap":plot_parameters['colormap'], "vmin":0, "vmax":1})
         if not title:
-            title_string = '{}{}'.format(title_prefix, measurement_name)
+            title_string = f'{title_prefix}{measurement_name}'
         else:
             title_string = title
 
         plt.yticks(rotation=0)
         ax.set_title(title_string)
 
-        figure_dir = '{}{}/'.format(plot_parameters['plot_dir'], plot_dir_suffix)
+        figure_dir = Path(f"{plot_parameters['plot_dir']}{plot_dir_suffix}")
 
         plot_prefix = ''
         if 'plot_prefix' in plot_parameters:
             plot_prefix = plot_parameters['plot_prefix']
-            plot_prefix = "fast_{}".format(plot_prefix)
-            # import pdb;pdb.set_trace()
+            plot_prefix = f"fast_{plot_prefix}"
         dataset_name = plot_prefix
 
-        figure_name = '{}_{}_{}.png'.format(dataset_name, plot_type, measurement_name[:-4])
+        figure_name = f'{dataset_name}_{plot_type}_{measurement_name[:-4]}.png'
 
         if not plot_parameters.get('use_buffer', False):
             Path(figure_dir).mkdir(parents=True, exist_ok=True)
             print(f"Saving figure to {figure_dir}{figure_name}")
-            fig.savefig("{}{}".format(figure_dir, figure_name), dpi=200, bbox_inches='tight', format="png",
-                        compress_level=1)
+            fig.savefig(Path(figure_dir)/figure_name, dpi=200, bbox_inches='tight', format="png")
         return_figure = save_plot_to_buffer(plot_parameters, fig)
         plt.close()
         return return_figure
@@ -281,12 +261,9 @@ class HeatmapPlot(object):
         return return_figure
 
 
-    # IntensityMatrix = _plot_heatmap_from_mcc_ims_measurement
-    # BasicHeatmap = plot_heatmap_helper
     FastIntensityMatrix = plot_heatmap_helper_fast
     ClasswiseHeatmaps = plot_classwise_heatmaps
     FeatureMatrixPlot = plot_feature_matrix
-    # MultipleIntensityMatrices = plot_intensity_matrices
 
 
 class ClusterPlot(object):
@@ -738,6 +715,7 @@ class ClusterPlot(object):
             parsed_filename = "{}_ims.csv".format(m.filename.split("_ims")[0])
             title_dict['measurement_name'] = parsed_filename
             # speed up by iterating over measurement, updating rects and keeping heatmap
+            # TODO inconsistent filename returned - full path returned by ClusterBasic - here only filename
             collected_figure_tuples.extend(
                 (ClusterPlot._plot_overlay_clustering_helper_fast(
                     intensity_matrix=m.df, pdm_coord_tuples=peak_alignment_result.peak_coordinates.items(),
@@ -1102,12 +1080,8 @@ class RocCurvePlot(object):
                                         auc_measures['fpr_of_splits_by_class'][class_label],
                                         auc_measures['auc_of_splits_by_class'][class_label])):
 
-                                # plt.plot(fpr_per_split, tpr_per_split, lw=1, alpha=0.3,
-                                #          label='ROC fold %d (AUC = %0.2f)' % (i, auc_per_split))
-                                # tprs.append(interp(mean_fpr, fpr_per_split, tpr_per_split))
                                 mean_tpr += interp(mean_fpr, fpr_per_split, tpr_per_split)
                                 mean_tpr[0] = 0.0
-                                # print("split = {}".format(i))
 
                             # average over splits
                             mean_tpr /= len(auc_measures['tpr_of_splits_by_class'][0])
@@ -1122,8 +1096,6 @@ class RocCurvePlot(object):
                                          # unique_class_labels[class_label], auc_measures['mean_auc'], auc_measures['std_auc']),
                                      lw=2, alpha=.8)
 
-                            # plt.fill_between(mean_fpr, tprs_lower, tprs_upper, color='grey', alpha=.2,
-                            #                  label=r'$\pm$ 1 std. dev.')
                         RocCurvePlot._label_roc_axes(peak_detection)
                         fig = plt.gcf()
 
@@ -1131,7 +1103,7 @@ class RocCurvePlot(object):
                         if analysis_result.peak_alignment_step is not None:
                             pas_n = analysis_result.peak_alignment_step.name
 
-                        fig_name = f"{plot_parameters['plot_dir']}roc_curve/{plot_prefix}_multi_roc_curve_plot_{peak_detection}_{pas_n}.png"
+                        fig_name = Path(f"{plot_parameters['plot_dir']}roc_curve/{plot_prefix}_multi_roc_curve_plot_{peak_detection}_{pas_n}.png")
                         # print(fig_name)
                         if not plot_parameters.get('use_buffer', False):
                             fig.savefig(fig_name, dpi=300, bbox_inches='tight')
@@ -1148,8 +1120,9 @@ class RocCurvePlot(object):
         plt.ylim([-0.05, 1.05])
         plt.xlabel('False Positive Rate')
         plt.ylabel('True Positive Rate')
-        plt.title('ROC for {}'.format(peak_detection))
-        plt.legend(loc="lower right")
+        plt.title(f'ROC for {peak_detection}')
+        # put legend outside of plot
+        plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
 
     ROCCurve = _plot_two_class_roc_curve
     MultiClassROCCurve = _plot_multiclass_class_roc_curve
@@ -1438,12 +1411,8 @@ class TreePlot(object):
         rv = []
         for class_comparison_str, dots in dot_data:
             if plot_parameters.get('use_buffer', False):
-                # fig_name = f"{Path(plot_parameters['plot_prefix']).stem}_dt_{class_comparison_str}.png"
-                # fig_name = f"{Path(plot_parameters['plot_prefix']).stem}_dt.png"
-                # fig_name = f"{Path(plot_parameters['plot_prefix']).stem}_dt.png"
                 fig_name = f"{Path(fig_path).stem}_dt.png"
             else:
-                # fig_name = f"{fig_path}_{class_comparison_str}.png"
                 fig_name = f"{fig_path}.png"
             rv.append(((eval_method_name, pdm_name, class_comparison_str), TreePlot._render_decision_tree_graph(dots, fig_name, plot_parameters), fig_name))
         return rv
@@ -1452,6 +1421,7 @@ class TreePlot(object):
     def _render_decision_tree_graph(dot_data, path, plot_parameters):
         rv = None
         graph = graphviz.Source(source=dot_data, format="png")
+
         graph.render(path[:-4], cleanup=True)
 
         # if use buffer - we write to temp dir and have to read them back in
@@ -1469,15 +1439,16 @@ class TimeSeriesPlot(object):
     """
 
     @staticmethod
-    def _time_series_plot(mcc_ims_analysis, plot_parameters):
+    def _time_series_plots(mcc_ims_analysis, plot_parameters, limit_to_pdmn=[], limit_to_features=[]):
         """
         Select top features from analysis result, ensure measurements are sorted and pass to helper to plot
+        @param mcc_ims_analysis: MccImsAnalysis
         @param plot_parameters:
-        @param plot_parameters:
+        @param limit_to_pdmn: Limit to a list of peak detection method names
+        @param limit_to_features: Only plot for certain features
         @return:
         """
-        # TODO check if has a analysis_result - otherwise throw error as need a feature matrix
-        # FIXME implement me
+        # check if has a analysis_result - otherwise throw error as need a feature matrix
 
         if not (hasattr(mcc_ims_analysis, 'analysis_result') and hasattr(mcc_ims_analysis.analysis_result, 'trainings_matrix')):
             raise ValueError("No analysis result / feature matrix present. Needed for plot.")
@@ -1489,27 +1460,37 @@ class TimeSeriesPlot(object):
         all_fns = []
         # get feature_matrix from analysis
         for pdmn, fm in mcc_ims_analysis.analysis_result.trainings_matrix.items():
-            # sorted_by Gini decrease / pvalue - already limited to top 10 on default
-            for performance_measure_name in best_features_df['performance_measure_name'].unique():
-                current_maks = np.logical_and(best_features_df['peak_detection_method_name'] == pdmn,
-                                              best_features_df['performance_measure_name'] == performance_measure_name)
-                current_top_features = best_features_df[current_maks]['peak_id'].unique()
-                title_prefix = pdmn
-                y_max = fm.loc[fm.index, current_top_features].max().max()
-                current_buffers, current_fns = TimeSeriesPlot.TimeSeriesFromMatrix(
-                    feature_matrix=fm, time_sorted_measurement_names=sorted(fm.index.values),
-                    feature_names=current_top_features,
-                    class_label_dict=mcc_ims_analysis.analysis_result.class_label_dict,
-                    plot_parameters=plot_parameters, title_prefix=title_prefix,
-                    y_max_limit=y_max
-                )
-                all_buffers.extend(current_buffers)
-                all_fns.extend(current_fns)
+
+            if limit_to_pdmn and pdmn not in limit_to_pdmn:
+                continue
+            else:
+                # sorted_by Gini decrease / pvalue - already limited to top 10 on default
+                for performance_measure_name in best_features_df['performance_measure_name'].unique():
+
+                    current_maks = np.logical_and(best_features_df['peak_detection_method_name'] == pdmn,
+                                                  best_features_df['performance_measure_name'] == performance_measure_name)
+
+                    if limit_to_features:
+                        current_top_features = [feat for feat in best_features_df[current_maks]['peak_id'].unique() if feat in limit_to_features]
+                    else:
+                        current_top_features = best_features_df[current_maks]['peak_id'].unique()
+
+                    title_prefix = pdmn
+                    y_max = fm.loc[fm.index, current_top_features].max().max()
+                    current_buffers, current_fns = TimeSeriesPlot.TimeSeriesFromMatrix(
+                        feature_matrix=fm, time_sorted_measurement_names=fm.index.values,
+                        feature_names=current_top_features,
+                        class_label_dict=mcc_ims_analysis.analysis_result.class_label_dict,
+                        plot_parameters=plot_parameters, title_prefix=title_prefix,
+                        y_max_limit=y_max, pdmn=pdmn,
+                    )
+                    all_buffers.extend(current_buffers)
+                    all_fns.extend(current_fns)
         return all_buffers, all_fns
 
 
     @staticmethod
-    def _time_series_plot_helper(feature_matrix, time_sorted_measurement_names, feature_names, class_label_dict, plot_parameters, y_max_limit=None, use_date=True, title_prefix=""):
+    def _time_series_plot_helper(feature_matrix, time_sorted_measurement_names, feature_names, class_label_dict, plot_parameters, y_max_limit=None, use_date=True, title_prefix="", pdmn=""):
         """
         Extract feature intensities using measurement names and feature names - then do a separate line plot for each feature
         @param feature_matrix: pandas dataframe measurement_names as index and feature_names in columns
@@ -1518,6 +1499,9 @@ class TimeSeriesPlot(object):
         @param class_label_dict: `dict()` mapping measurement names to class labels
         @param plot_parameters:
         @param y_max_limit: y-axis upper limit - to enable direct comparison of curves if wanted - None if disabled
+        @param use_date: parse measurement names as dates - of the form XXXX_YYMMDDMMSS_ims.csv
+        @param title_prefix: prefix for title
+        @param pdmn: peak detection method name, added to figure name
         @return:
         """
         wanted_subset = feature_matrix.loc[time_sorted_measurement_names, feature_names]
@@ -1529,13 +1513,8 @@ class TimeSeriesPlot(object):
         # do one plot putting all lines looks super crowded do a line plot for each feature - splitting for each class
 
         # ax = sns.lineplot(data=full_feature_matrix, x="time", y="intensity", hue="feature", style="label", markers=True)
-        # n_features = len(feature_names)
         figure_dir = Path(plot_parameters['plot_dir'])/"time_series"
         prefix = plot_parameters.get('plot_prefix', '')
-
-        # figure_name = f"{prefix}_top{n_features}_full_time_series.png"
-        # title = f"Timeseries of {prefix} top{n_features} features"
-        # feature_name = f"Top{n_features}"
 
         fns = []
         return_buffers = []
@@ -1548,11 +1527,13 @@ class TimeSeriesPlot(object):
 
             if not plot_parameters.get('use_buffer', False):
                 Path(figure_dir).mkdir(parents=True, exist_ok=True)
-                print(f"Saving figure to {figure_dir/figure_name}")
-                ax.figure.savefig(figure_dir/figure_name, dpi=300, bbox_inches='tight', format="png")
+                figure_path = figure_dir/figure_name
+                print(f"Saving figure to {figure_path}")
+                ax.figure.savefig(figure_path, dpi=300, bbox_inches='tight', format="png")
+            else:
+                figure_path = Path(figure_name)
             buff = save_plot_to_buffer(plot_parameters, ax.figure)
-
-            fns.append(figure_name)
+            fns.append(figure_path)
             return_buffers.append(buff)
             return_features.append(feature_name)
             plt.close(ax.figure)
@@ -1565,7 +1546,10 @@ class TimeSeriesPlot(object):
             #  pass y_max_limit to lineplot
             ax.set_ylim(0, y_max_limit)
             current_feature = single_matrix['feature'][0]
-            figure_name = f"{prefix}_{current_feature}_time_series.png"
+            if pdmn:
+                figure_name = f"{prefix}_{pdmn}_{current_feature}_time_series.png"
+            else:
+                figure_name = f"{prefix}_{current_feature}_time_series.png"
             title = f"Timeseries of {prefix} \n{title_prefix} {current_feature}"
 
             prep_save_visuals(ax, title, figure_name, current_feature)
@@ -1627,7 +1611,7 @@ class TimeSeriesPlot(object):
         full_feature_matrix = pd.concat(single_matrices)
         return full_feature_matrix, single_matrices
 
-    TimeSeriesFromAnalysis = _time_series_plot
+    TimeSeriesFromAnalysis = _time_series_plots
     TimeSeriesFromMatrix = _time_series_plot_helper
 
 

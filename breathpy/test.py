@@ -1,5 +1,5 @@
 from breathpy.model.BreathCore import construct_default_parameters, construct_default_processing_evaluation_steps
-from breathpy.model.CoreTest import test_start_to_end_pipeline
+from breathpy.model.CoreTest import run_start_to_end_pipeline
 
 def small_candy_run():
     # define file prefix and default parameters
@@ -12,7 +12,7 @@ def small_candy_run():
     preprocessing_steps, evaluation_params_dict = construct_default_processing_evaluation_steps()
 
     # call start
-    test_start_to_end_pipeline(plot_parameters, file_parameters, preprocessing_steps, evaluation_params_dict)
+    run_start_to_end_pipeline(plot_parameters, file_parameters, preprocessing_steps, evaluation_params_dict)
 
 if __name__ == "__main__":
     small_candy_run()
