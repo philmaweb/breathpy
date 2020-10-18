@@ -1,13 +1,20 @@
-
-
 [![DOI](https://zenodo.org/badge/267952107.svg)](https://zenodo.org/badge/latestdoi/267952107)
 
 # BreathPy
+## A Python Library for Breath Analysis, Preprocessing, Visualization and Classification of Multi-Capillary-Column Ion-Mobility-Spectrometry data
 
-## Process breath samples of Multi-Capillary-Column Ion-Mobility-Spectrometry files
-### Now with experimental support for GC/MS + LC/MS data
+## Installation
 
-## Usage MCC/IMS
+`BreathPy` depends on `python >=3.6` and is available through `pip`. Make sure to activate your local virtual environment or use anaconda. To render decision trees we depend on the `graphviz` executable. Either install into your current environment using `pip install breathpy` or create, activate a new anaconda environment "breath" and install `breathpy` and `graphviz`:  
+```bash
+conda create --name breath python pip graphviz -y
+conda activate breath
+pip install breathpy
+```
+
+If you want to use the tutorial jupyter notebooks - you want to install jupyter `conda install jupyter`.
+
+## Usage MCC-IMS
 
 First prepare the example dataset by creating a subdirectory `data` and then linking the example files there.
 ```python
@@ -31,10 +38,10 @@ Then run the example analysis like so:
 ```python
 # import required functions
 from breathpy.model.BreathCore import construct_default_parameters, construct_default_processing_evaluation_steps
-from breathpy.model.CoreTest import test_start_to_end_pipeline
+from breathpy.model.CoreTest import run_start_to_end_pipeline
 
 # define file prefix and default parameters
-file_prefix = 'small_candy_anon'; folder_name = "small_candy_anon"
+file_prefix = folder_name = 'small_candy_anon'
 
 # assuming the data directory is in the current directory
 plot_parameters, file_parameters = construct_default_parameters(file_prefix, folder_name, make_plots=True)
@@ -43,13 +50,14 @@ plot_parameters, file_parameters = construct_default_parameters(file_prefix, fol
 preprocessing_steps, evaluation_params_dict = construct_default_processing_evaluation_steps()
 
 # call start
-test_start_to_end_pipeline(plot_parameters, file_parameters, preprocessing_steps, evaluation_params_dict)
+run_start_to_end_pipeline(plot_parameters, file_parameters, preprocessing_steps, evaluation_params_dict)
 ```
 
-For more complete examples see `model/CoreTest.py` `test_start_to_end_pipeline` and `test_resume_analysis`.
-The `small_candy_anon` example is included in the package under `data/small_candy_anon/`, more coming soon.
+For more complete examples see `tutorial/binary_candy.ipynb`, `tutorial/multiclass_mouthwash.ipynb' or 'CoreTest.run_start_to_end_pipeline` and `CoreTest.run_resume_analysis`.
+Example data is available at https://github.com/philmaweb/BreathAnalysis.github.io/tree/master/data.
 
-## Usage GC/MS
+## Usage GC-MS
+### Now with experimental support for GC/MS + LC/MS data through pyOpenMS
 Download and extract the example datasets into the current data subdirectory:
 ```bash
 wget "https://github.com/bioinformatics-ca/bioinformatics-ca.github.io/raw/master/data_sets/Example_Jul0914_mzXML.zip"
@@ -82,7 +90,7 @@ source_dir = Path(os.getcwd())/"data/eoe"
 target_dir = Path(os.getcwd())/"data/eoe_out"
 
 # will delete previous split and rewrite data
-train_df, test_df = generate_train_test_set_helper(source_dir, target_dir, cross_val_num=5)
+train_df, test_df = generate_train_test_set_helper(source_dir, target_dir, cross_val_num=cross_val_num)
 train_dir = Path(target_dir)/"train_eoe"
 
 # prepare analysis
