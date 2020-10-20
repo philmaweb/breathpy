@@ -137,8 +137,6 @@ def run_start_to_end_pipeline(plot_params, file_params, preprocessing_steps, eva
         TreePlot.DecisionTrees(ims_analysis.analysis_result, plot_parameters=plot_params)
 
     # continue with prediction and preprocessing of test set
-    tmp = Path(tempfile.gettempdir())/f'.breath/{hash(os.times())}'
-    os.makedirs(tmp)
 
     dataset_name = file_params['folder_path'].split("/")[-1]
     # some splits don't work - as we have a trailing /
@@ -160,21 +158,7 @@ def run_start_to_end_pipeline(plot_params, file_params, preprocessing_steps, eva
     test_paths = [f"{test_dir}{i_fn}" for i_fn in filtered_stratified_test_names]
     test_measurements = [MccImsMeasurement(tp) for tp in test_paths]
 
-    predictor_path = tmp+"/pred_model.sav"
-    ims_analysis.analysis_result.export_prediction_models(path_to_save=predictor_path)
-    predictors = joblib.load(predictor_path)
-
-    # clean up tempdir
-    rmtree(tmp, ignore_errors=True)
-
-    predictionModel = PredictionModel(
-        preprocessing_params={s:{} for s in preprocessing_steps},
-                                      evaluation_params=ims_analysis.performance_measure_parameter_dict,
-                                      scipy_predictor_by_pdm=predictors,
-                                      feature_names_by_pdm=ims_analysis.analysis_result.feature_names_by_pdm,
-                                      peax_binary_path=peax_binary_path,
-                                      visualnow_layer_file=visualnow_layer_path)
-
+    predictionModel = PredictionModel(ims_analysis)
     prediction = predictionModel.predict(test_measurements)
     # is always sorted
 
@@ -269,8 +253,6 @@ def run_resume_analysis(plot_params, file_params, preprocessing_steps, evaluatio
     TreePlot.DecisionTrees(ims_analysis.analysis_result, plot_parameters=plot_params)
 
     # continue with prediction and preprocessing of test set
-    tmp = os.path.join(tempfile.gettempdir(), '.breath/{}'.format(hash(os.times())))
-    os.makedirs(tmp)
 
     dataset_name = Path(file_params['folder_path']).stem
     # some splits don't work - as we have a trailing /
@@ -291,21 +273,7 @@ def run_resume_analysis(plot_params, file_params, preprocessing_steps, evaluatio
     filtered_stratified_test_names = file_limit_stratify_selection_by_label(test_in_file_names, keys_to_label_dict=test_labels_dict, labels_to_keep=specific_classes, file_limit=number_of_files_limit)
     test_paths = [f"{test_dir}{i_fn}" for i_fn in filtered_stratified_test_names]
 
-
-    predictor_path = tmp+"/pred_model.sav"
-    ims_analysis.analysis_result.export_prediction_models(path_to_save=predictor_path)
-    predictors = joblib.load(predictor_path)
-
-    # clean up tempdir
-    rmtree(tmp, ignore_errors=True)
-
-    predictionModel = PredictionModel(
-        preprocessing_params={s:preprocessing_params_dict.get(s, {}) for s in preprocessing_steps},
-                                      evaluation_params=ims_analysis.performance_measure_parameter_dict,
-                                      scipy_predictor_by_pdm=predictors,
-                                      feature_names_by_pdm=ims_analysis.analysis_result.feature_names_by_pdm,
-                                      peax_binary_path=peax_binary_path,
-                                      visualnow_layer_file=visualnow_layer_path)
+    predictionModel = PredictionModel(ims_analysis)
 
     # pass test dir as result - if not available fall back to peak detection
     test_result_dir = file_params['out_dir'].replace("train_", "test_")

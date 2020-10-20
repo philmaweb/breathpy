@@ -1394,7 +1394,7 @@ class Analysis(object):
         :return:
         """
         # check whether file exists, if not do not set class labels
-        if Path(self.class_label_file).exists() or '.zip' in self.class_label_file:
+        if Path(self.class_label_file).exists() or '.zip' in str(self.class_label_file):
             label_dict = Analysis.parse_class_labels(self.class_label_file)
         else:
             raise ValueError(f"Class label file {self.class_label_file} not found.")
@@ -1499,7 +1499,7 @@ class Analysis(object):
     @staticmethod
     def guess_class_label_extension(dir_to_search, file_list_alternative=[]):
         """
-        Returns first instance of class_labels*[.csv, .tsv, .txt] found in dir_to_search
+        Returns first instance of *class_labels[.csv, .tsv, .txt] found in dir_to_search
         :param dir_to_search:
         :return:
         """
@@ -1511,10 +1511,7 @@ class Analysis(object):
                 potential_class_label_file_names = [fn for fn in file_list if
                                                     Path(fn).stem.endswith("class_labels")]
             else:
-                if not str(dir_to_search).endswith("/"):
-                    dir_to_search = str(dir_to_search) + "/"
                 file_list = Path(dir_to_search).glob("*")
-
                 potential_class_label_file_names = [str(fn) for fn in file_list if fn.stem.endswith("class_labels")]
             supported_file_names = [fn for fn in potential_class_label_file_names if (fn.endswith(".csv") or fn.endswith(".tsv") or fn.endswith(".txt"))]
 
@@ -1599,11 +1596,11 @@ class Analysis(object):
         else:
             raise ValueError(f"Label File {filename} not found.")
 
-        if filename.endswith(".csv"):
+        if Path(filename).suffix == ".csv":
             sep = ","
-        elif filename.endswith(".tsv"):
+        elif Path(filename).suffix == ".tsv":
             sep = "\t"
-        elif filename.endswith(".txt"):
+        elif Path(filename).suffix == ".txt":
             sep = " "
         else:
             raise ValueError("Label file format not supported. Use csv or tsv format.")
@@ -3764,7 +3761,6 @@ class MccImsAnalysis(Analysis):
         # TODO apply remove_control_peaks_positive
 
 
-
     def remove_redundant_features_fm(self):
         """
         Takes Feature matrix from analysis result and parameters from evaluation params to call feature reduction
@@ -5665,16 +5661,29 @@ class PredictionModel(object):
     Holds preprocessing and evaluation parameters and model for class prediction
     """
 
-    def __init__(self, preprocessing_params, evaluation_params, scipy_predictor_by_pdm, feature_names_by_pdm, dir_level = "", visualnow_layer_file="", peax_binary_path=""):
-        dataset_name = "new_dataset"
+    def __init__(self, mcc_ims_analysis, dataset_name="new_dataset"):
+        try:
+            # copy all parameters from analysis, that prediction is based on
+            scipy_predictor_by_pdm = mcc_ims_analysis.analysis_result.model_by_pdm.copy()
+            preprocessing_steps = mcc_ims_analysis.preprocessing_steps
+            preprocessing_params = mcc_ims_analysis.preprocessing_parameter_dict.copy()
+
+            # fill preprocessing_params with keys
+            preprocessing_params = {s: preprocessing_params.get(s, {}) for s in preprocessing_steps}
+            evaluation_params = mcc_ims_analysis.performance_measure_parameter_dict.copy()
+            dir_level = mcc_ims_analysis.dir_level
+            visualnow_layer_file = mcc_ims_analysis.visualnow_layer_file
+            peax_binary_path = mcc_ims_analysis.peax_binary_path
+            feature_names_by_pdm = mcc_ims_analysis.analysis_result.feature_names_by_pdm.copy()
+        except AttributeError as ae:
+            raise(AttributeError(f"Analysis not ready for prediction", ae))
+
         self.analysis = MccImsAnalysis(
-            measurements=[], preprocessing_steps=preprocessing_params.keys(),
-                                preprocessing_parameters=preprocessing_params,
-                                outfile_names=[],
-                                dir_level=dir_level,
-                                dataset_name=dataset_name,
-                                visualnow_layer_file=visualnow_layer_file,
-                                peax_binary_path=peax_binary_path)
+                measurements=[], preprocessing_steps=preprocessing_steps,
+                preprocessing_parameters=preprocessing_params,
+                outfile_names=[], dir_level=dir_level,
+                dataset_name=dataset_name, visualnow_layer_file=visualnow_layer_file,
+                peax_binary_path=peax_binary_path)
         self.preprocessing_params = preprocessing_params
         self.evaluation_params = evaluation_params
         self.scipy_predictor_by_pdm = scipy_predictor_by_pdm

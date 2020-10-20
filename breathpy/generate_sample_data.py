@@ -160,8 +160,8 @@ def generate_train_test_set_helper(sample_dir, target_dir, cross_val_num=5, seed
     Path(train_dir).mkdir(parents=True)
     Path(test_dir).mkdir(parents=True)
 
-    tr_class_label_fn = Path(train_dir)/"class_labels.csv"
-    te_class_label_fn = Path(test_dir)/"class_labels.csv"
+    tr_class_label_fn = Path(train_dir)/Path(class_label_file).name
+    te_class_label_fn = Path(test_dir)/Path(class_label_file).name
 
     train_df[['name', 'label']].to_csv(tr_class_label_fn, sep=",", index=False)
     test_df[['name', 'label']].to_csv(te_class_label_fn, sep=",", index=False)
