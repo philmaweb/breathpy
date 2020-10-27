@@ -167,6 +167,8 @@ def run_gcms_platform_multicore(sample_dir, preprocessing_params={}, evaluation_
     # Next: create Feature matrix
     # import feature matrix if already existent - otherwise do alignment
     result_data_dir = f"{gcms_a.dir_level}/results/data/{gcms_a.dataset_name}/"
+    # make sure directory does exist
+    Path(result_data_dir).mkdir(parents=True, exist_ok=True)
     try:
         # can take several minutes to load - some alignment dfs are hundred of MBs in size
         fm = gcms_a.import_alignment_result(result_data_dir, gcms_a.peak_detection_steps[0].name)
@@ -203,6 +205,7 @@ def run_gcms_platform_multicore(sample_dir, preprocessing_params={}, evaluation_
         test_dir = sample_dir
         test_dataset_name = dataset_name
         test_result_data_dir = f"{gcms_a.dir_level}/results/data/{gcms_a.dataset_name}/"
+
 
     #  handle for GCMS files
     predictor_path = tmp + "/pred_model.sav"  # export and reload for usage later on
@@ -258,12 +261,7 @@ def run_gcms_platform_multicore(sample_dir, preprocessing_params={}, evaluation_
     test_fm_dict = test_ims_analysis.analysis_result.feature_matrix
     df_dict_matching_training = PredictionModel.reconstruct_remove_features(test_fm_dict, trainings_feature_names_by_pdmn)
 
-    predictionModel = PredictionModel(
-        preprocessing_params=preprocessing_params,
-        evaluation_params=ims_analysis.performance_measure_parameter_dict,
-        scipy_predictor_by_pdm=predictors,
-        feature_names_by_pdm=ims_analysis.analysis_result.feature_names_by_pdm,)  # not sure whether important to use train / test matrix
-
+    predictionModel = PredictionModel(mcc_ims_analysis=ims_analysis)
     prediction, test_matrix_by_pdm = predictionModel.predict_from_feature_matrix(pdms=[GCMSPeakDetectionMethod.ISOTOPEWAVELET], fm_dict_matching_training=df_dict_matching_training)
     # is always sorted
     prediction_holder = []
@@ -280,9 +278,9 @@ def run_gcms_platform_multicore(sample_dir, preprocessing_params={}, evaluation_
             else:
                 false[fn] = predicted_label
 
-        print("resulting_labels for {} are: {}".format(pdm.name, predicted_labels))
-        print("Falsely classified: {}".format(false))
-        print("That's {} correct vs {} false".format(len(correct.keys()), len(false.keys())))
+        print(f"resulting_labels for {pdm.name} are: {predicted_labels}")
+        print(f"Falsely classified: {false}")
+        print(f"That's {len(correct.keys())} correct vs {len(false.keys())} false")
         prediction_holder.append((predicted_labels, correct, false))
     return prediction_holder
 

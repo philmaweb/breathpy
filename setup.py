@@ -10,7 +10,7 @@ README = (HERE / "README.md").read_text()
 # This call to setup() does all the work
 setup(
     name="breathpy",
-    version="0.9.1",
+    version="0.9.2",
     description="Breath analysis in python",
     long_description=README,
     long_description_content_type="text/markdown",
@@ -34,7 +34,7 @@ setup(
         "numpy>=1.18.1",
         "pandas>=1.0.3",
         "psutil>=3.4.2",
-        "pyopenms==2.4.0",
+        "pyopenms==2.5.0",
         "pywavelets>=1.1.1",
         "scikit-image>=0.16.2",
         "scikit-learn>=0.22.0,<0.23.0",

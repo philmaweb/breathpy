@@ -260,7 +260,7 @@ def align_feature_xmls(feature_xml_lis, consensus_map_out_path="", class_label_d
     default_max_num_peaks_considered = 1000
     default_max_scaling_value = 10.0
     aligned_paths = []
-    for current_feature_xml_path in feature_xml_lis:
+    for i, current_feature_xml_path in enumerate(feature_xml_lis):
         # load features into FeatureMaps
         reference_map = oms.FeatureMap()  # pairwise alignment - so need master map -
         oms.FeatureXMLFile().load(reference_map_path, reference_map)
@@ -328,6 +328,7 @@ def align_feature_xmls(feature_xml_lis, consensus_map_out_path="", class_label_d
         reference_map_path = updated_reference_path
 
         aligned_paths.append(updated_current_map_path)
+        print(f"Finished alignment of {i}/{len(feature_xml_lis)-1}")
 
     # also replace here with new reference we updated the reference map to
     aligned_paths[max_index] = reference_map_path
@@ -341,6 +342,7 @@ def align_feature_xmls(feature_xml_lis, consensus_map_out_path="", class_label_d
     #   b) Call "setReference", "addToGroup" (n times), "getResultMap" in that order.
 
     for i, current_feature_map_path in enumerate(aligned_paths):
+        print(f"Grouping features {i}/{len(aligned_paths)-1}")
         current_map = oms.FeatureMap()
         oms.FeatureXMLFile().load(current_feature_map_path, current_map)
 
@@ -407,6 +409,7 @@ def align_feature_xmls(feature_xml_lis, consensus_map_out_path="", class_label_d
     # don't export if not required - requires more file management
     # now export
     if consensus_map_out_path:
+        print("Storing consensus xml")
         oms.ConsensusXMLFile().store(str(consensus_map_out_path), consensus_map)
 
     return consensus_map, measurement_names
@@ -422,7 +425,8 @@ def convert_consensus_map_to_feature_matrix(consensus_map, measurement_names, ro
     """
     all_feature_records = []
     peak_ids = []
-    for consensus_feature in consensus_map:
+    print("Converting PeakIds")
+    for i, consensus_feature in enumerate(consensus_map):
         # consensus_feature.computeConsensus()
         peak_id = generate_consensus_peak_id(consensus_feature, rounding_precision=rounding_precision)
         # print("ConsensusFeature", peak_id)
@@ -439,6 +443,13 @@ def convert_consensus_map_to_feature_matrix(consensus_map, measurement_names, ro
 
         all_feature_records.append((peak_id, single_col_dict))
         peak_ids.append(peak_id)
+        if i % 1000 == 0:
+            try:
+                print(f"Step {i}/{len(consensus_map)}")
+            except TypeError:
+                print(f"Step {i}")
+    print("Finished converting PeakIds, building feature matrix")
+
 
     # add all to pandas dataframe
     # sort by peak_id
@@ -457,6 +468,7 @@ def convert_consensus_map_to_feature_matrix(consensus_map, measurement_names, ro
     # dont split - use measurement names passed
     index_names = measurement_names
     feature_df.index = index_names
+    print(f"Finished construction of feature matrix of shape {feature_df.shape}")
     return feature_df
 
 

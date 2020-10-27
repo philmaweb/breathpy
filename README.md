@@ -1,7 +1,7 @@
 [![DOI](https://zenodo.org/badge/267952107.svg)](https://zenodo.org/badge/latestdoi/267952107)
 
 # BreathPy
-## A Python Library for Breath Analysis, Preprocessing, Visualization and Classification of Multi-Capillary-Column Ion-Mobility-Spectrometry data
+## A python library for breath gas biomarker profiling
 
 ## Installation
 
@@ -12,7 +12,7 @@ conda activate breath
 pip install breathpy
 ```
 
-If you want to use the tutorial jupyter notebooks - you want to install jupyter `conda install jupyter`.
+If you want to use the tutorial jupyter notebooks - you also need to install jupyter `conda install jupyter`.
 
 ## Usage MCC-IMS
 
@@ -53,58 +53,72 @@ preprocessing_steps, evaluation_params_dict = construct_default_processing_evalu
 run_start_to_end_pipeline(plot_parameters, file_parameters, preprocessing_steps, evaluation_params_dict)
 ```
 
-For more complete examples see `tutorial/binary_candy.ipynb`, `tutorial/multiclass_mouthwash.ipynb' or 'CoreTest.run_start_to_end_pipeline` and `CoreTest.run_resume_analysis`.
+For more complete examples see `https://github.com/philmaweb/breathpy/blob/master/breathpy/tutorial/binary_candy.ipynb`, `https://github.com/philmaweb/breathpy/blob/master/breathpy/tutorial/multiclass_mouthwash.ipynb' or 'CoreTest.run_start_to_end_pipeline` and `CoreTest.run_resume_analysis`.
 Example data is available at https://github.com/philmaweb/BreathAnalysis.github.io/tree/master/data.
 
 ## Usage GC-MS
 ### Now with experimental support for GC/MS + LC/MS data through pyOpenMS
 Download and extract the example datasets into the current data subdirectory:
-```bash
-wget "https://github.com/bioinformatics-ca/bioinformatics-ca.github.io/raw/master/data_sets/Example_Jul0914_mzXML.zip"
-wget "https://github.com/bioinformatics-ca/bioinformatics-ca.github.io/raw/master/data_sets/Example_Jul1114_mzXML.zip"
-mkdir -p "data/eoe"
-unzip Example_Jul1114_mzXML.zip -d data/eoe/
-# overwrite the blank and alkstdt
-unzip -o Example_Jul0914_mzXML.zip -d data/eoe/
-# download class_labels.csv file
-wget -O data/eoe/eoe_class_labels.csv "https://github.com/philmaweb/BreathAnalysis.github.io/raw/master/data/eoe_class_labels.csv"
+```python
+# handle imports
+from urllib.request import urlretrieve
+from pathlib import Path
+from zipfile import ZipFile
+
+# download and extract data into data/algae directory
+url = 'https://github.com/philmaweb/BreathAnalysis.github.io/raw/master/data/algae.zip'
+zip_dst = Path("data/algae.zip")
+dst_dir = Path("data/algae/")
+dst_dir.mkdir(parents=True, exist_ok=True)
+urlretrieve(url, zip_dst)
+
+# unzip archive into data subdirectory
+with ZipFile(zip_dst, "r") as archive_handle:
+    archive_handle.extractall(Path(dst_dir))
 ```
 
 ```python
-from pathlib import Path
 import os
+from pathlib import Path
 from breathpy.model.BreathCore import construct_default_parameters,construct_default_processing_evaluation_steps
 from breathpy.model.ProcessingMethods import GCMSPeakDetectionMethod, PerformanceMeasure
 from breathpy.model.GCMSTest import run_gcms_platform_multicore
 from breathpy.generate_sample_data import generate_train_test_set_helper
 
 """
-Runs analysis of Eosinophilic Esophagitis (EoE) sample set with 40 samples - gcms measurements
-Dataset from https://bioinformaticsdotca.github.io/metabolomics_2018_mod2lab
+Runs analysis of the algae sample set (Sun M, Yang Z and Wawrik B (2018) Metabolomic Fingerprints 
+of Individual Algal Cells Using the Single-Probe Mass Spectrometry Technique. 
+Front. Plant Sci. 9:571. doi: 10.3389/fpls.2018.00571)
+
+19 samples from four conditions - light, dark, nitrogen-limited and replete (post nitrogen-limited)
+Samples originated from single-probe mass spectrometry files - we import created featureXML files.
+
 :param cross_val_num:
 :return:
 """
-cross_val_num=5
+cross_val_num=3
 # or use your local path to a dataset here
-source_dir = Path(os.getcwd())/"data/eoe"
-target_dir = Path(os.getcwd())/"data/eoe_out"
+source_dir = Path("data/algae")
+target_dir = Path("data")
 
 # will delete previous split and rewrite data
 train_df, test_df = generate_train_test_set_helper(source_dir, target_dir, cross_val_num=cross_val_num)
-train_dir = Path(target_dir)/"train_eoe"
+train_dir = Path(target_dir)/"train_algae"
 
 # prepare analysis
-set_name = "train_eoe"
+set_name = "train_algae"
 make_plots = True
 
 # generate parameters
-# if executing from breathpy directory use execution_dir_level='project',
-plot_parameters, file_parameters = construct_default_parameters(set_name, set_name, make_plots=make_plots,
-                                                                execution_dir_level='project')
+plot_parameters, file_parameters = construct_default_parameters(set_name, set_name, make_plots=make_plots)
 preprocessing_params_dict = {GCMSPeakDetectionMethod.ISOTOPEWAVELET: {"hr_data": True}}
 _, evaluation_params_dict = construct_default_processing_evaluation_steps(cross_val_num)
 
-run_gcms_platform_multicore(sample_dir=train_dir, preprocessing_params=preprocessing_params_dict, evaluation_parms=evaluation_params_dict)
+# running the full analysis takes less than 30 minutes of computation time using 6 cores - in this example most if not all computations are single core though
+run_gcms_platform_multicore(
+		sample_dir=train_dir, 
+		preprocessing_params=preprocessing_params_dict, 
+		evaluation_parms=evaluation_params_dict, num_cores=6)
 ```
 Also see `model/GCMSTest.py` for reference. 
 

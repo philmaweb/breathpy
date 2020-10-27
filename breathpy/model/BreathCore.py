@@ -1918,11 +1918,12 @@ class GCMSAnalysis(Analysis):
         print(f"Starting Alignment {peak_alignment_method.name}")
         peak_detection_method_name = self.peak_detection_steps[0].name
 
-        result_data_dir = f"{self.dir_level}results/data/{self.dataset_name}/"
         # consensus export is now optional
         # consensus_outfile_name = f"{result_data_dir}{peak_alignment_method.name}.consensusXML"
         consensus_map, measurement_names = align_feature_xmls(
-                feature_xml_lis=self.feature_xml_files, class_label_dict=self.get_class_label_dict())
+                feature_xml_lis=self.feature_xml_files, class_label_dict=self.get_class_label_dict(),
+                # consensus_map_out_path=
+        )
 
         print(f"Converting Alignment to Feature Matrix")
         # print(self.performance_measure_parameter_dict)
@@ -1942,7 +1943,7 @@ class GCMSAnalysis(Analysis):
             self.feature_df = feature_df
             result_data_dir = f"{self.dir_level}results/data/{self.dataset_name}/"
             Path(result_data_dir).mkdir(parents=True, exist_ok=True)
-            fn = f"{result_data_dir}consensusXML_{peak_detection_method_name}.csv"
+            fn = Path(result_data_dir)/f"consensusXML_{peak_detection_method_name}.csv"
             print(f"Exporting Feature Matrix to disk {fn}")
             feature_df.to_csv(fn, sep='\t', float_format='%.6f', index=True, header=True,
                                   index_label="index")
@@ -1994,6 +1995,7 @@ class GCMSAnalysis(Analysis):
 
 
     def prepare_custom_fm_approach(self, feature_matrix):
+        print("Preparing analysis")
         # feature_matrix = feature_matrix_model
         measurements = []
         outfile_names = []
@@ -2264,7 +2266,7 @@ class MccImsAnalysis(Analysis):
         """
         Apply preprocessing steps to measurements using multiple cores
         First apply raw normalization steps, then PeakDetectionMethods and last PeakAlignmentMethods
-        :param num_cores:
+        :param num_cores: number of used cores
         :return:
         """
         # sanity check, whether binaries for external steps are set if selected
@@ -2285,10 +2287,10 @@ class MccImsAnalysis(Analysis):
                     ext_param_tuples = []
 
                     # create temporary directory for peax results
-                    tmp_dir = os.path.join(tempfile.gettempdir(), '.breath/peax_raw/{}/'.format(hash(os.times())))
+                    tmp_dir = os.path.join(tempfile.gettempdir(), f'.breath/peax_raw/{hash(os.times())}/')
                     Path(tmp_dir).mkdir(parents=True)
                     for m in self.measurements:
-                        ext_param_tuples.append((m, tmp_dir, self.peax_binary_path))
+                        ext_param_tuples.append((m, str(tmp_dir), self.peax_binary_path))
 
                     peax_pdr = P.map(MccImsAnalysis.external_peak_detection_peax_helper_multicore, ext_param_tuples)
                     # peax_pdr = [MccImsAnalysis.external_peak_detection_peax_helper_multicore(tup) for tup in ext_param_tuples]
@@ -2318,8 +2320,8 @@ class MccImsAnalysis(Analysis):
                 pdm_param_tuples = []
                 preprocessing_parameter_dict = MccImsAnalysis.prepare_preprocessing_parameter_dict(self.preprocessing_parameter_dict)
 
-                # edge case - need to populate visualnow params if in peak_detection steps
-                if PeakDetectionMethod.VISUALNOWLAYER in self.peak_detection_steps and not PeakDetectionMethod.VISUALNOWLAYER in preprocessing_parameter_dict:
+                # edge case - need to populate visualnow params if in peak_detection steps - don't set if already there
+                if PeakDetectionMethod.VISUALNOWLAYER in self.peak_detection_steps and not "visualnow_filename" in preprocessing_parameter_dict.get(PeakDetectionMethod.VISUALNOWLAYER, {}):
                     preprocessing_parameter_dict[PeakDetectionMethod.VISUALNOWLAYER] = {"visualnow_filename": self.visualnow_layer_file}
 
                 for new_m in new_measurements:
@@ -2334,7 +2336,6 @@ class MccImsAnalysis(Analysis):
                 # use pool to do all internal peak detection in parallel
                 # sorted by measurement - then in same order as self.peak_detection_steps
                 pdrs = P.map(self.detect_peaks_helper_no_yield, pdm_param_tuples)
-                # pdrs = [self.detect_peaks_helper_no_yield(tup) for tup in pdm_param_tuples]
 
                 for pdrs_one_measurement in pdrs:
                     # has len(self.peak_detection_steps) many pdrs
@@ -3695,7 +3696,6 @@ class MccImsAnalysis(Analysis):
 
         # get class_labels from description of peak_alignment results
         # class_labels = peak_alignment_result.peak_descriptions['class_label'].values
-
         for peak_detection_method, df_for_percentage_threshold_all_classes in dict_of_df_for_percentage_threshold.items():
             if not (len(self.class_label_dict)) == df_for_percentage_threshold_all_classes.shape[0]:
                 raise ValueError(f"Wrong number of samples in class_labels and trainingsmatrix. {len(self.class_label_dict)} != {len(df_for_percentage_threshold_all_classes.index.values)}")
@@ -3771,7 +3771,7 @@ class MccImsAnalysis(Analysis):
                 FeatureReductionMethod.REMOVE_PERCENTAGE_FEATURES,
                 self.DEFAULT_FEATURE_REDUCTION_PARAMETERS[FeatureReductionMethod.REMOVE_PERCENTAGE_FEATURES])
 
-        print("Applying feature reduction with {}".format(reduction_params))
+        print(f"Applying feature reduction with {reduction_params}")
         noise_threshold = reduction_params['noise_threshold']
         percentage_threshold = reduction_params['percentage_threshold']
 
@@ -4001,6 +4001,7 @@ class MccImsAnalysis(Analysis):
         :param directory:
         :return:
         """
+        Path(directory).mkdir(parents=True, exist_ok=True)
         self.export_preprocessed_measurements(directory)
         # save prediction method in filename, so we can can have multiple runs of peak detection
         # overwriting previous results
@@ -4626,12 +4627,13 @@ class AnalysisResult(object):
         """
         compute p_values with man whitney u test
         correct for FDR with benjamini hochberg
-        apply permutation test
         :param n_of_features:
         :param benjamini_hochberg_alpha:
         :param kwargs:
         :return:
         """
+        # permutation test no longer applied - takes too much computation time for larger datasets
+
         performance_measure = PerformanceMeasure.FDR_CORRECTED_P_VALUE
 
         df_with_fdr_correction = self.get_pvalues_df(n_features=n_of_features, benjamini_hochberg_alpha=benjamini_hochberg_alpha)
@@ -5275,7 +5277,7 @@ class AnalysisResult(object):
                 pvals_current_class = corrected_pvals_df[
                         np.logical_and(corrected_pvals_df['peak_detection_method_name'] == peak_detection_name,
                                        corrected_pvals_df['class_comparison'] == comparison_str)]
-                pvals_current_class['1-corrected_p_values'] = 1 - pvals_current_class.loc[:, 'corrected_p_values']
+                pvals_current_class.loc[:, '1-corrected_p_values'] = 1 - pvals_current_class.loc[:, 'corrected_p_values']
                 gini_df = pd.DataFrame({'gini_decrease': feature_importances[0], 'peak_id': trainings_matrix.columns.values, })
 
                 merged = pd.merge(pvals_current_class, gini_df, on='peak_id')
@@ -5721,17 +5723,21 @@ class PredictionModel(object):
         return matching_matrices
 
 
-    def predict(self, measurements):
+    def predict(self, measurements, num_cores=1):
         # make a new analysis with preprocessing and evaluation parameters
         # return the list of predicted classes for the input
         # create temp dir to write to
 
-        tmp = os.path.join(tempfile.gettempdir(), '.breath/{}'.format(hash(os.times())))
+        # tmp = Path(tempfile.gettempdir())/f'.breath/{hash(os.times())}'
+        tmp = os.path.join(tempfile.gettempdir(),f'.breath/{hash(os.times())}')
         os.makedirs(tmp)
         outfile_names = [tmp + '/' + m.filename[:-4] + "_out.csv" for m in measurements]
         self.analysis.measurements = measurements
         self.analysis.outfile_names = outfile_names
-        self.analysis.preprocess()
+        if num_cores > 1:
+            self.analysis.preprocess_multicore(num_cores=num_cores)
+        else:
+            self.analysis.preprocess()
         rmtree(tmp, ignore_errors=True)
 
         self.analysis.align_peaks(file_prefix="")

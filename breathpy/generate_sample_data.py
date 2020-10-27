@@ -14,7 +14,7 @@ from sklearn.model_selection import train_test_split
 from zipfile import ZipFile, ZIP_DEFLATED
 
 from .model.BreathCore import MccImsAnalysis, MccImsMeasurement
-
+from .model.GCMSTest import filter_feature_xmls
 
 def generate_full_candy_classes(plot_params, file_params, preprocessing_steps, evaluation_params_dict):
     all_files = glob.glob(file_params['data_dir'] + "*_ims.csv")
@@ -245,6 +245,37 @@ def generate_train_test_set_helper(sample_dir, target_dir, cross_val_num=5, seed
                 raw_files_not_copied.append(file_path)
         if raw_files_not_copied:
             print(f"Didn't copy {len(raw_files_not_copied)} raw files - as not found in source directory.")
+
+        # also consider featureXML files
+        feature_xmls_fns = filter_feature_xmls(sample_dir_path)
+        cannot_copy = []
+        for feature_xml_fn_ in feature_xmls_fns:
+            feature_xml_fn = Path(feature_xml_fn_)
+            # split_fn - so can campare with class labels
+            # need to get file ending of original raw file to match with class labels
+            # could be MZML or MZXML
+            raw_fn_pre = feature_xml_fn.name.split("ML_output.featureXML")[0]
+            raw_fn = raw_fn_pre + "ML"
+
+            new_fn = ""
+            if raw_fn in train_name_set:
+                new_fn = Path(train_dir) / feature_xml_fn.name
+            elif raw_fn in test_name_set:
+                new_fn = Path(test_dir) / feature_xml_fn.name
+            else:
+                cannot_copy.append(feature_xml_fn)
+
+            # copy to destination
+            if new_fn:
+                file_copy(feature_xml_fn, new_fn)
+
+        if feature_xmls_fns:
+            print(f"Copied {len(feature_xmls_fns) - len(cannot_copy)}/{len(feature_xmls_fns)} featureXML files.")
+        if cannot_copy:
+            print(f"{len(cannot_copy)} featureXML not in either index.", f"{cannot_copy}")
+
+
+
 
     # guess layer file and copy to target dir too
     if potential_layers:
