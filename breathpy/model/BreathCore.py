@@ -5691,6 +5691,10 @@ class PredictionModel(object):
         self.scipy_predictor_by_pdm = scipy_predictor_by_pdm
         self.feature_names_by_pdm = feature_names_by_pdm
 
+        # stores predictions and prediction probas
+        self.prediction_by_pdm = {pdm: [] for pdm in scipy_predictor_by_pdm.keys()}
+        self.prediction_probas_by_pdm = {pdm: [] for pdm in scipy_predictor_by_pdm.keys()}
+
 
     @staticmethod
     def reconstruct_remove_features(matrices_by_pdm, feature_names_by_pdm):
@@ -5758,7 +5762,9 @@ class PredictionModel(object):
             # probas = self.scipy_predictor.predict_proba(X)
             # TODO exported predictors should be both a decision tree, and a RandomForestClassifier
             prediction_by_pdm[pdm] = self.scipy_predictor_by_pdm[pdm].predict(X_reduced).tolist()
+            self.prediction_probas_by_pdm[pdm] = self.scipy_predictor_by_pdm[pdm].predict_proba(X_reduced).tolist()
             # predictor = self.scipy_predictor_by_pdm[pdm]
+        self.prediction_by_pdm = prediction_by_pdm
         return prediction_by_pdm
 
 

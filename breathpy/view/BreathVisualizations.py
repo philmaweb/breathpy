@@ -21,7 +21,7 @@ import seaborn as sns
 from numpy import interp
 from skimage.transform import resize
 from skimage import color as skcolor
-from sklearn.metrics import auc
+from sklearn.metrics import auc, roc_curve, roc_auc_score
 import datetime
 
 from ..model.BreathCore import PeakAlignmentMethod, MccImsAnalysis, MccImsMeasurement
@@ -1113,6 +1113,68 @@ class RocCurvePlot(object):
                         plt.close()
         return return_figures
 
+    @staticmethod
+    def _plot_two_class_roc_curve_from_prediction_model(prediction_model, prediction_class_label_dict, plot_parameters, limit_to_peak_detection_method_name=False):
+        return_figures = []
+        print("Plotting binary ROC curve from prediction")
+        # assert isinstance(analysis_result, AnalysisResult)
+        plot_prefix = ''
+        if 'plot_prefix' in plot_parameters:
+            plot_prefix = plot_parameters['plot_prefix']
+
+        use_buffer = plot_parameters.get('use_buffer', False)
+
+        figure_dir = f"{plot_parameters['plot_dir']}roc_curve"
+        # first check whether directory exists for figure output - or whether we want to use a buffer
+        if not use_buffer:
+            Path(figure_dir).mkdir(parents=True, exist_ok=True)
+
+        for peak_detection_method, predictions in prediction_model.prediction_by_pdm.items():
+            peak_detection_method_name = peak_detection_method.name
+            if limit_to_peak_detection_method_name and limit_to_peak_detection_method_name != peak_detection_method_name:
+                continue
+            else:
+                # clear current figure
+                fig = plt.gcf()
+
+                # compute auc measures from predictions
+                class_labels = np.unique(list(prediction_class_label_dict.values()))
+                to_index_map = {cl: i for i, cl in enumerate(class_labels)}
+
+                # binarize labels
+                # only works since we have an OrderedDict - otherwise would return unordered list
+                current_truth = [to_index_map[cl] for cl in prediction_class_label_dict.values()]
+
+                both_probas = prediction_model.prediction_probas_by_pdm[peak_detection_method]
+                current_probas = [proba[1] for proba in both_probas]
+
+                fpr, tpr, _ = roc_curve(y_true=current_truth, y_score=current_probas)
+                auc = roc_auc_score(current_truth, current_probas)
+
+                plt.plot(fpr, tpr, lw=2, alpha=.8, label=f'ROC prediction (AUC = {auc:.2f})')
+
+                # add random classification performance line
+                plt.plot([0, 1], [0, 1], linestyle='--', lw=2, color='r', label='Random', alpha=.8)
+
+                RocCurvePlot._label_roc_axes(peak_detection_method_name)
+                fig = plt.gcf()
+
+                fig.set_figsize = (9, 4)
+
+                if use_buffer:
+                    fig_name = f"{plot_prefix}_roc_curve_plot_prediction.png"
+                else:
+                    fig_name = f"{plot_parameters['plot_dir']}roc_curve/{plot_prefix}_roc_curve_plot_{peak_detection_method_name}_prediction.png"
+
+                if not plot_parameters.get('use_buffer', False):
+                    fig.savefig(fig_name, dpi=300, bbox_inches='tight', )
+
+                return_figures.append((peak_detection_method_name,
+                                       save_plot_to_buffer(plot_parameters, fig), fig_name))
+                plt.close()
+        return return_figures
+
+
 
     @staticmethod
     def _label_roc_axes(peak_detection):
@@ -1126,6 +1188,7 @@ class RocCurvePlot(object):
 
     ROCCurve = _plot_two_class_roc_curve
     MultiClassROCCurve = _plot_multiclass_class_roc_curve
+    ROCCurveFromPrediction = _plot_two_class_roc_curve_from_prediction_model
 
 class VennDiagram(object):
     """
