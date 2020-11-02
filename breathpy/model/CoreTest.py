@@ -176,7 +176,7 @@ def run_start_to_end_pipeline(plot_params, file_params, preprocessing_steps, eva
         print(f"resulting_labels for {pdm.name} are: {predicted_labels}")
         print(f"Falsely classified: {false}")
         print(f"That's {len(correct.keys())} correct vs {len(false.keys())} false")
-    return ims_analysis
+    return ims_analysis, predictionModel
 
 
 def run_resume_analysis(plot_params, file_params, preprocessing_steps, evaluation_params_dict, preprocessing_params_dict={}, number_of_files_limit=-1, specific_classes=(), stop_after_alignment=False):
@@ -308,7 +308,7 @@ def run_resume_analysis(plot_params, file_params, preprocessing_steps, evaluatio
         print("Falsely classified: {}".format(false))
         print("That's {} correct vs {} false".format(len(correct.keys()), len(false.keys())))
 
-    return ims_analysis, prediction
+    return ims_analysis, predictionModel
 
 
 
@@ -323,16 +323,13 @@ def run_default(set_name, make_plots=False, limit_to_pdm=[]):
         filtered.extend(limit_to_pdm)
         preprocessing_steps = filtered
 
-
-    run_start_to_end_pipeline(plot_parameters, file_parameters, preprocessing_steps, evaluation_params_dict,
+    ims_analysis, predictionModel = run_start_to_end_pipeline(plot_parameters, file_parameters, preprocessing_steps, evaluation_params_dict,
                               number_of_files_limit=0)
-    return file_parameters, preprocessing_steps
+    return file_parameters, preprocessing_steps, ims_analysis, predictionModel
 
 if __name__ == '__main__':
     # file_prefix = 'train_mouthwash'; folder_name = "train_mouthwash"
-    # file_prefix = 'train_COPD'; folder_name = "train_COPD"
     # file_prefix = 'train_full_candy'; folder_name = "train_full_candy"
-    # file_prefix = 'test_full_candy'; folder_name = "test_full_candy"
     file_prefix = 'small_candy_anon'; folder_name = "small_candy_anon"
 
     # edit resultsdir to match folder structure
@@ -340,5 +337,5 @@ if __name__ == '__main__':
     preprocessing_steps, evaluation_params_dict = construct_default_processing_evaluation_steps()
 
     # run_start_to_end_pipeline(plot_parameters, file_parameters, preprocessing_steps, evaluation_params_dict, stop_after_alignment=True)
-    run_start_to_end_pipeline(plot_parameters, file_parameters, preprocessing_steps, evaluation_params_dict)
+    ims_analysis, predictionModel = run_start_to_end_pipeline(plot_parameters, file_parameters, preprocessing_steps, evaluation_params_dict)
     # run_resume_analysis(plot_parameters, file_parameters, preprocessing_steps, evaluation_params_dict)
