@@ -20,7 +20,6 @@ from pathlib import Path
 import seaborn as sns
 from numpy import interp
 from skimage.transform import resize
-from skimage import color as skcolor
 from sklearn.metrics import auc, roc_curve, roc_auc_score
 import datetime
 
@@ -39,8 +38,10 @@ class HeatmapPlot(object):
     def prepare_fast_heatmap_plot(df, cmap_dict):
         fig = plt.figure()
         ax = fig.add_subplot(111)
+
         # faster conversion
-        image = skcolor.rgb2gray(df.T.values)
+        image = np.ascontiguousarray(df.T.values)
+
         # image.shape
         x_size, y_size = 2500, 2500
         image_resized = resize(image, (x_size, y_size), mode='reflect')
@@ -50,8 +51,10 @@ class HeatmapPlot(object):
 
         # to plot we need to use the indices of the intensity matrix - not the actual values
         irm_vals = np.asarray(df.index.values, dtype=float)
-        rt_vals = np.asarray(df.T.index.values, dtype=float)
-        # need to re-adjust the stepwidth - as we resized the image
+        rt_vals = np.asarray(df.columns.values, dtype=float)
+
+        # need to re-adjust the stepwidth - as we resized the image to x_size, y_size
+        # sns.heatmapplot was too slow - sometimes taking upwards of 1 second per plot
         ClusterPlot.setup_axes_for_fast_intensity_matrix(ax, irm_vals=irm_vals, rt_vals=rt_vals, x_size=x_size,
                                                          y_size=y_size)
         fig.set_figsize = (9, 4)
@@ -499,43 +502,46 @@ class ClusterPlot(object):
     def setup_axes_for_fast_intensity_matrix(ax, irm_vals, rt_vals, y_steps_width=25.0, x_steps_width=0.1,
                                              xlabel="Inverse Reduced Mobility (1/k0) [Vs/cm^2]",
                                              ylabel="Retention Time [s]", x_size=2500, y_size=2500):
-        # need to adjust tick positions to multiples of 25 and 0.1 otherwise - its going to use the index of the df
-        ax.yaxis.set_major_locator(ticker.MultipleLocator(
-            ClusterPlot.compute_stepwidth_fast(rt_vals, y_steps_width, y_size)))
 
-        ax.xaxis.set_major_locator(ticker.MultipleLocator(
-            ClusterPlot.compute_stepwidth_fast(irm_vals, x_steps_width, x_size, start_at=irm_vals[0])))
+        # need to adjust tick positions to multiples of 25 and 0.1 otherwise - its going to use the index of the df
 
         rt_top_tick = ((np.max(rt_vals) // y_steps_width) + 2.0) * y_steps_width
 
         irm_top_tick = ((np.max(irm_vals) // x_steps_width) + 2.0) * x_steps_width
-        # get one ticklable bellow the actual one, as the first one gets swallowed
-        irm_bottom_tick = max(0.0, ((np.min(irm_vals) // x_steps_width) - 1.0) * x_steps_width)
 
-        # need to add 0.0 twice to y-axis as it "swallows" the first 0.0
-        y_tick_labels = [0.0]
-        for ele in np.arange(0, rt_top_tick, y_steps_width):
-            y_tick_labels.append(ele)
+        y_tick_labels = np.arange(0, rt_top_tick, y_steps_width)
 
-        # for x ticks we have another problem, as we crop a significant part of the axis,
+        # for x ticks we can crop a significant part of the axis,
         #   our limit is not 0.0, but usually 0.4
-        # need to use continous array and add the minimum value
-        if irm_bottom_tick == 0.0:
-            x_tick_labels = [0.0]
-            x_tick_labels.extend(np.arange(0.0, irm_top_tick, x_steps_width))
-        else:
-            x_tick_labels = np.ascontiguousarray(np.arange(0, irm_top_tick, x_steps_width)) + irm_bottom_tick
+        # get lowest ticklabel
+        irm_bottom_tick = max(0.0, np.round(np.min(irm_vals), 2))
+        x_tick_labels = np.arange(irm_bottom_tick, irm_top_tick, x_steps_width)
 
         # need to convert to rounded representation
         x_tick_labels = np.round(x_tick_labels, decimals=2)
-        # now we assign the "multiple of" labels to the axis - Fixed
+        # now we assign the "multiple of" labels to the axis using fixed locators
+
+        # need to adjust tick positions to multiples of 25 and 0.1 otherwise - its going to use the index of the df
+        rt_formater_step = ClusterPlot.compute_stepwidth_fast(rt_vals, y_steps_width, y_size)
+        irm_formater_step = ClusterPlot.compute_stepwidth_fast(irm_vals, x_steps_width, x_size, start_at=irm_vals[0])
+
+        irm_fixed_steps = np.arange(0.0, x_size, irm_formater_step)
+        rt_fixed_steps = np.arange(0.0, y_size, rt_formater_step)
+
+        # set fixed axes locator positions
+        ax.yaxis.set_major_locator(ticker.FixedLocator(rt_fixed_steps))
+        ax.xaxis.set_major_locator(ticker.FixedLocator(irm_fixed_steps))
+
+        # set labels accordingly
         ax.yaxis.set_major_formatter(ticker.FixedFormatter(y_tick_labels))
         ax.xaxis.set_major_formatter(ticker.FixedFormatter(x_tick_labels))
+
         # reduce font size for labels
         ax.xaxis.set_tick_params(labelsize=7)
         ax.yaxis.set_tick_params(labelsize=7)
         ax.set_xlabel(xlabel)
         ax.set_ylabel(ylabel)
+
         #  remove black box surrounding the canvas at top and right side
         ax.spines['right'].set_visible(False)
         ax.spines['top'].set_visible(False)
