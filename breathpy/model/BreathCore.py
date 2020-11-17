@@ -4349,7 +4349,7 @@ class PeakDetectionResult(object):
         else:
             outname = self.measurement_name
 
-        filename = f"{directory}{outname}_{peak_detection_method.name}{PeakDetectionResult.peak_detection_result_suffix}.csv"
+        filename = Path(directory)/f"{outname}_{peak_detection_method.name}{PeakDetectionResult.peak_detection_result_suffix}.csv"
         columns = ['measurement_name',
                    'peak_id',
                    'retention_time',

@@ -207,58 +207,59 @@ class HeatmapPlot(object):
         return (class_label, HeatmapPlot.plot_heatmap_helper_fast(mcc_ims_measurement=dummy_measurement, plot_parameters=plot_parameters, title=descriptor, plot_type="classwise_heatmap",))
 
     @staticmethod
-    def plot_feature_matrix(feature_matrix, class_label_dict, plot_parameters, outname=""):
+    def plot_feature_matrix(feature_matrix, class_label_dict, plot_parameters, outname="", vmax=1.0):
         """
-        TODO needs annotation
+        TODO needs annotation improvements - maybe users can pass figsize?
         Visualize the feature matrix by class using the normalized intensity of each feature
         :param feature_matrix:
         :param class_label_dict:
         :param plot_parameters:
         :param outname:
+        :param vmax: overwrites max value present in feature_matrix - i.e. to normalize all maps to same max value
         :return:
         """
         from collections import defaultdict
-        fig = plt.figure()
+        # fig = plt.figure()
         # fig = ax.get_figure()
         # iterate over all class labels - filter rows by correct label and create subplot
         class_to_row_map = defaultdict(list)
         for rn, cl in class_label_dict.items():
             class_to_row_map[cl].append(rn)
 
+        # use same range of colors for comparison
         num_loops = len(class_to_row_map.keys())
-        for i, (cl, row_selection) in enumerate(class_to_row_map.items()):
+
+        fig, axn = plt.subplots(num_loops, 1, sharex=True)
+        cbar_ax = fig.add_axes([.91, .3, .03, .4])
+
+        for i, ((cl, row_selection), ax) in enumerate(zip(class_to_row_map.items(), axn.flat)):
             # create mask for selection of correct rows
             selection_mask = [i in row_selection for i in feature_matrix.index]
             relevant_rows = feature_matrix.loc[selection_mask]
 
-            ax = fig.add_subplot(2,1,i+1)
             # force all x labels...
-            sns.heatmap(relevant_rows, ax=ax, xticklabels=True)
+            sns.heatmap(relevant_rows, ax=ax, xticklabels=True, yticklabels=True,
+                        cmap=sns.color_palette("coolwarm", as_cmap=True),
+                        cbar= i==0,
+                        cbar_ax = None if i else cbar_ax,
+                        linewidths=.5, vmax=vmax,
+                        )
             ax.set_ylabel(cl)
-            # remove x-axis label for all axes except the last one
-            if i < num_loops-1: # enumerate starts at 0 and will end at len(-1)
-                ax.get_xaxis().set_ticks([])
-            # else:
-            #     ax.get_xaxis().set_ticks(relevant_rows.columns.values)
+        fig.tight_layout(rect=[0, 0, .9, 1])  # rect defines legend box
 
-        # fig, ax = HeatmapPlot.prepare_fast_heatmap_plot(feature_matrix,
-        #                                                 {"cmap": plot_parameters['colormap'], "vmin": 0, "vmax": 1})
-
-        # plt.yticks(rotation=0)
         if not outname:
-            plot_suffix = "fm_plot",
+            plot_suffix = "fm_plot"
             figure_dir = f"{plot_parameters['plot_dir']}{plot_suffix}"
             figure_name = f'{plot_suffix}.png'
         else:
-            figure_dir = Path(outname).parent
-            figure_name= Path(outname).stem + Path(outname).suffix
+            figure_dir  = Path(outname).parent
+            figure_name = Path(outname).name
 
         # make subplot for all rows of certain class
         if not plot_parameters.get('use_buffer', False):
             Path(figure_dir).mkdir(parents=True, exist_ok=True)
-            print(f"Saving figure to {figure_dir}/{figure_name}")
-            fig.savefig(f"{figure_dir}/{figure_name}", dpi=300, bbox_inches='tight', format="png",
-                        compress_level=1)
+            print(f"Saving FeatureMatrixPlot to {figure_dir}/{figure_name}")
+            fig.savefig(f"{figure_dir}/{figure_name}", dpi=300, bbox_inches='tight', format="png", compress_level=6)
         return_figure = save_plot_to_buffer(plot_parameters, fig)
         plt.close()
         return return_figure
