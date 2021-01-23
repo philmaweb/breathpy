@@ -5,7 +5,7 @@
 
 ## Installation
 
-`BreathPy` depends on `python >=3.6`, but does **not yet** support `python==3.9`. It is available through `pip`. Make sure to activate your local virtual environment or use anaconda. To render decision trees we depend on the `graphviz` executable. Either install into your current environment using `pip install breathpy` or create, activate a new anaconda environment "breath" and install `breathpy` and `graphviz`:  
+`BreathPy` depends on `python >=3.6`, but does **not yet** support `python==3.9`, as several dependencies are not yet available for python 3.9. It is available through `pip`. Make sure to activate your local virtual environment or use anaconda. To render decision trees we depend on the `graphviz` executable. Either install into your current environment using `pip install breathpy` or create, activate a new anaconda environment "breath" and install `breathpy` and `graphviz`:  
 ```bash
 conda create --name breath python=3.8 pip graphviz -y
 conda activate breath
