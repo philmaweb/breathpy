@@ -128,4 +128,4 @@ See
 > [A modular computational framework for automated peak extraction from ion mobility spectra, 2014, D’Addario *et. al*](https://doi.org/10.1186/1471-2105-15-25)
 
 ## Contact
-If you run into difficulties using `BreathPy`, please open an issue at our [GitHub](https://github.com/philmaweb/BreathPy) repository. Alternatively you can write an email to [Philipp Weber](mailto:pweber@imada.sdu.dk?subject=[BreathPy]%20BreathPy).
+If you run into difficulties using `BreathPy`, please open an issue at our [GitHub](https://github.com/philmaweb/BreathPy) repository. Alternatively you can write an email to [Philipp Weber](mailto:philmaweb+breathpy@gmail.com?subject=[BreathPy]%20BreathPy).
