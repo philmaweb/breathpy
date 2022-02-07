@@ -10,13 +10,13 @@ README = (HERE / "README.md").read_text()
 # This call to setup() does all the work
 setup(
     name="breathpy",
-    version="0.9.5",
+    version="0.9.6",
     description="Breath analysis in python",
     long_description=README,
     long_description_content_type="text/markdown",
     url="https://github.com/philmaweb/breathpy",
     author="Philipp Weber",
-    author_email="pweber@imada.sdu.dk",
+    author_email="philmaweb@gmail.com",
     license="GPLv3",
     classifiers=[
         "Programming Language :: Python :: 3",
